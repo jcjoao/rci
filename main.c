@@ -13,11 +13,21 @@
 #include <errno.h>
 #include <signal.h>
 
+typedef struct node
+{
+    int net;
+    int id;
+    int port;
+    struct node *ext;
+    struct node *bck;
+    struct node *intr;
+};
+
 
 int main(void)
 {
     printf("a");
+    
 
-
-
+    return 0;
 }
