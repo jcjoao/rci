@@ -21,7 +21,7 @@ typedef struct node
     struct node *ext;
     struct node *bck;
     struct node *intr;
-};
+}node;
 
 
 int main(void)
