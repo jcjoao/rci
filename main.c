@@ -12,6 +12,10 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#define regUDP "59000"
+#define regIP "193.136.138.142"
+
+int join_node();
 
 typedef struct node
 {
@@ -24,10 +28,23 @@ typedef struct node
 }node;
 
 
-int main(void)
+int main(int argc, char *argv[ ])
 {
-    printf("a");
+    char user_input[20];
+    int net, id;
+    char com[6];
+
+    fgets(user_input, 12, stdin);
+    sscanf(user_input,"%s %d %d",com,&net,&id);
+
+
+    printf("\n%s, %d,%d,%d\n",com,net,id);
     
 
+    return 0;
+}
+
+int join_node(){
+    
     return 0;
 }
