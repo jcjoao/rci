@@ -15,17 +15,8 @@
 #define regUDP "59000"
 #define regIP "193.136.138.142"
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Funtion name: join
- * 
- * Arguments: char net
- *            char id
- * 
- * Return: 
- * Description: Joins node
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-int join(char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta);
+
+int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta);
 
 typedef struct node
 {
@@ -49,7 +40,7 @@ int main(int argc, char *argv[ ])
     //My variables
     char user_input[12];
     char net[4], id[3];
-    char com[5];
+    char com[6];
     char tejo_ip[]="193.136.138.142";
     char porta[]="69";
     char portTEJO[]="59000";
@@ -75,7 +66,7 @@ int main(int argc, char *argv[ ])
                         printf("Incorrect input!");
                         exit(0);
                     }
-                    join(net,id,tejo_ip,portTEJO,ip, porta);
+                    join(com,net,id,tejo_ip,portTEJO,ip, porta);
                 }
         }
         
@@ -84,7 +75,7 @@ int main(int argc, char *argv[ ])
     return 0;
 }
 
-int join(char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta){
+int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta){
         //REG net id ip_da_maquina portaTCP
     struct addrinfo hints,*res;
     struct sockaddr addr;
@@ -94,9 +85,20 @@ int join(char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta){
     char buffer[128+1];
     char buff[128];
 
-    sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
-    printf("%s\n",buff);
-    
+    if(strcmp(com,"join")==0){
+        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
+        printf("%s\n",buff);
+    }
+    else{
+        if(strcmp(com,"leave")==0){
+            sprintf(buff,"UNREG %s %s\n",net,id);
+            printf("%s\n",buff);
+        }
+        else{
+            exit(0);
+        }
+    }
+
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd==-1)/*error*/exit(1);
 
