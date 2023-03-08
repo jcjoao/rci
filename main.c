@@ -15,7 +15,17 @@
 #define regUDP "59000"
 #define regIP "193.136.138.142"
 
-int join_node();
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Funtion name: join
+ * 
+ * Arguments: char net
+ *            char id
+ * 
+ * Return: 
+ * Description: Joins node
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int join(char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta);
 
 typedef struct node
 {
@@ -38,8 +48,12 @@ int main(int argc, char *argv[ ])
     FD_SET(0,&inputs); // Set standard input channel on
     //My variables
     char user_input[12];
-    int net, id;
+    char net[4], id[3];
     char com[5];
+    char tejo_ip[]="193.136.138.142";
+    char porta[]="69";
+    char portTEJO[]="59000";
+    char ip[]="193.136.138.142";
 
     while(1)
     {
@@ -55,8 +69,13 @@ int main(int argc, char *argv[ ])
             if(FD_ISSET(0,&testfds))
                 {
                     fgets(user_input, 20, stdin);
-                    sscanf(user_input,"%s %d %d\n",com,&net,&id);
-                    printf("%s,%d,%d\n",com,net,id);
+                    sscanf(user_input,"%s %s %s\n",com,net,id);
+                    //printf("%s,%s,%s\n",com,net,id);
+                    if(strlen(net)!=3 || strlen(id)!=2){
+                        printf("Incorrect input!");
+                        exit(0);
+                    }
+                    join(net,id,tejo_ip,portTEJO,ip, porta);
                 }
         }
         
@@ -65,7 +84,42 @@ int main(int argc, char *argv[ ])
     return 0;
 }
 
-int join_node(){
-    //REG net id ip_da_maquina portaTCP
+int join(char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta){
+        //REG net id ip_da_maquina portaTCP
+    struct addrinfo hints,*res;
+    struct sockaddr addr;
+    socklen_t addrlen;
+    int fd,errcode;
+    ssize_t n;
+    char buffer[128+1];
+    char buff[128];
+
+    sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
+    printf("%s\n",buff);
+    
+    fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
+    if(fd==-1)/*error*/exit(1);
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family=AF_INET;//IPv4
+    hints.ai_socktype=SOCK_DGRAM;//UDP socket
+
+    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",portTEJO,&hints,&res);
+    if(errcode!=0)/*error*/exit(1);
+
+    n=sendto(fd,buff,128,0,res->ai_addr,res->ai_addrlen);
+    if(n==-1)/*error*/exit(1);
+    
+    //Receber resposta
+    addrlen=sizeof(addr);
+    n=recvfrom(fd,buffer,128,0,&addr,&addrlen);
+    if(n==-1)/*error*/exit(1);
+
+    buffer[n] = '\0';
+    printf("echo: %s\n", buffer);
+    close(fd);
+
+    freeaddrinfo(res);
+    
     return 0;
 }
