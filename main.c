@@ -14,8 +14,9 @@
 #include <signal.h>
 
 
-int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* porta);
+int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP);
 int verify_id(char* id,char* list, int n); //returns 1 if id is in list, 0 if it inst
+int choose_id(char* id,char* list, int n);
 
 typedef struct node
 {
@@ -35,15 +36,18 @@ int main(int argc, char *argv[ ])
     //struct timeval timeout;
     //int i,out_fds,n,errcode;
     int out_fds;
+    //int tcpfd;
     FD_ZERO(&inputs); // Clear inputs
     FD_SET(0,&inputs); // Set standard input channel on
+    //FD_SET(tcpfd,&inputs);
+
     //My variables
     char user_input[12];
     char net[4], id[3];
     char com[6];
     char regIP[]="193.136.138.142";
-    char porta[]="69";
     char regUDP[]="59000";
+    char regTCP[]="58000";
     char ip[]="194.210.157.117";
 
     while(1)
@@ -57,19 +61,23 @@ int main(int argc, char *argv[ ])
                 exit(1);
         }
         else{
-            if(FD_ISSET(0,&testfds))
-                {
-                    fgets(user_input, 20, stdin);
-                    sscanf(user_input,"%s %s %s\n",com,net,id);
-                    //printf("%s,%s,%s\n",com,net,id);
-                    if(strcmp(com,"join")==0||strcmp(com,"leave")==0){
-                        if(strlen(net)!=3 || strlen(id)!=2){
-                            printf("Incorrect input!");
-                            exit(0);
-                        }
+            if(FD_ISSET(0,&testfds)){
+                fgets(user_input, 20, stdin);
+                sscanf(user_input,"%s %s %s\n",com,net,id);
+                //printf("%s,%s,%s\n",com,net,id);
+                if(strcmp(com,"join")==0||strcmp(com,"leave")==0){
+                    if(strlen(net)!=3 || strlen(id)!=2){
+                        printf("Incorrect input!");
+                        exit(0);
                     }
-                    join(com,net,id,regIP,regUDP,ip, porta);
                 }
+                join(com,net,id,regIP,regUDP,ip,regTCP);
+            }
+            /*
+            if(FD_ISSET(tcpfd,&testfds)){
+                printf("recebeu mensagem tcp");
+            }
+            */
         }
         
     }
@@ -77,7 +85,7 @@ int main(int argc, char *argv[ ])
     return 0;
 }
 
-int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* porta){
+int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP){
         //REG net id ip_da_maquina portaTCP
     struct addrinfo hints,*res;
     struct sockaddr addr;
@@ -120,7 +128,8 @@ int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* 
             snprintf(id, sizeof(id), "%02d", rand() % 100);
             }
         }
-        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
+        choose_id(id,list,n);
+        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,regTCP);
         printf("%s\n",buff);
     }
     else{
@@ -150,7 +159,6 @@ int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* 
     buffer[n] = '\0';
     printf("echo: %s\n", buffer);
     close(fd);
-
     freeaddrinfo(res);
     
     return 0;
@@ -168,4 +176,17 @@ int verify_id(char* id,char* list,int n){
         i++;
     }
 return aux;
+}
+
+int choose_id(char* id,char* list, int n){
+    int i=0;
+    int number_of_ids=0;
+    while(i!=n){
+        if(i==0||list[i-1]=='\n'){
+            number_of_ids++;
+        }
+        i++;
+    }
+    int choosen_id= rand() % (number_of_ids-1) + 1;
+    return 0;
 }
