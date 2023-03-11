@@ -15,6 +15,7 @@
 
 
 int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* porta);
+int verify_id(char* id,char* list, int n); //returns 1 if id is in list, 0 if it inst
 
 typedef struct node
 {
@@ -109,27 +110,22 @@ int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* 
     printf("echo: %s\n", list);
 
     //Verificar se ja ha um id
-    int i =0;
-    int aux=0;
-    while(i!=n && aux==0){
-        if(i==0||list[i-1]=='\n'){
-            if(list[i]==id[0]&&list[i+1]==id[1]){
-                aux=1;
-            }
-        }
-        i++;
-    }
+    int aux;
 
     if(strcmp(com,"join")==0){
-        if(aux==1){
-        snprintf(id, sizeof(id), "%02d", rand() % 100);
-        aux=0;
+        aux=1;
+        while(aux==1){
+            aux=verify_id(id,list,n);
+            if(aux==1){
+            snprintf(id, sizeof(id), "%02d", rand() % 100);
+            }
         }
         sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
         printf("%s\n",buff);
     }
     else{
         if(strcmp(com,"leave")==0){
+            aux=verify_id(id,list,n);
             if(aux==0){
                 printf("Error, no Node found");
                 exit(0);
@@ -158,4 +154,18 @@ int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* 
     freeaddrinfo(res);
     
     return 0;
+}
+
+int verify_id(char* id,char* list,int n){
+    int i =0;
+    int aux=0;
+    while(i!=n && aux==0){
+        if(i==0||list[i-1]=='\n'){
+            if(list[i]==id[0]&&list[i+1]==id[1]){
+                aux=1;
+            }
+        }
+        i++;
+    }
+return aux;
 }
