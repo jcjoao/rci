@@ -12,11 +12,9 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-#define regUDP "59000"
-#define regIP "193.136.138.142"
 
 
-int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta);
+int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* porta);
 
 typedef struct node
 {
@@ -30,6 +28,7 @@ typedef struct node
 
 int main(int argc, char *argv[ ])
 {
+    srand(time(NULL));
     //Select Variables
     fd_set inputs, testfds;
     //struct timeval timeout;
@@ -41,10 +40,10 @@ int main(int argc, char *argv[ ])
     char user_input[12];
     char net[4], id[3];
     char com[6];
-    char tejo_ip[]="193.136.138.142";
+    char regIP[]="193.136.138.142";
     char porta[]="69";
-    char portTEJO[]="59000";
-    char ip[]="193.136.138.142";
+    char regUDP[]="59000";
+    char ip[]="194.210.157.117";
 
     while(1)
     {
@@ -62,11 +61,13 @@ int main(int argc, char *argv[ ])
                     fgets(user_input, 20, stdin);
                     sscanf(user_input,"%s %s %s\n",com,net,id);
                     //printf("%s,%s,%s\n",com,net,id);
-                    if(strlen(net)!=3 || strlen(id)!=2){
-                        printf("Incorrect input!");
-                        exit(0);
+                    if(strcmp(com,"join")==0||strcmp(com,"leave")==0){
+                        if(strlen(net)!=3 || strlen(id)!=2){
+                            printf("Incorrect input!");
+                            exit(0);
+                        }
                     }
-                    join(com,net,id,tejo_ip,portTEJO,ip, porta);
+                    join(com,net,id,regIP,regUDP,ip, porta);
                 }
         }
         
@@ -75,7 +76,7 @@ int main(int argc, char *argv[ ])
     return 0;
 }
 
-int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, char* porta){
+int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* porta){
         //REG net id ip_da_maquina portaTCP
     struct addrinfo hints,*res;
     struct sockaddr addr;
@@ -84,20 +85,7 @@ int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, ch
     ssize_t n;
     char buffer[128+1];
     char buff[128];
-
-    if(strcmp(com,"join")==0){
-        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
-        printf("%s\n",buff);
-    }
-    else{
-        if(strcmp(com,"leave")==0){
-            sprintf(buff,"UNREG %s %s\n",net,id);
-            printf("%s\n",buff);
-        }
-        else{
-            exit(0);
-        }
-    }
+    char list[128];
 
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd==-1)/*error*/exit(1);
@@ -106,9 +94,55 @@ int join(char* com, char* net,char* id,char* tejo_ip,char* portTEJO,char* ip, ch
     hints.ai_family=AF_INET;//IPv4
     hints.ai_socktype=SOCK_DGRAM;//UDP socket
 
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",portTEJO,&hints,&res);
-    if(errcode!=0)/*error*/exit(1);
+    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",regUDP,&hints,&res);
+    if(errcode!=0){
+        printf("UDP Failed!");
+        exit(1);}
+    
+    //Receber Lista de Nodes
+    n=sendto(fd,"NODES 055",128,0,res->ai_addr,res->ai_addrlen);
+    if(n==-1)exit(1);
+    addrlen=sizeof(addr);
+    n=recvfrom(fd,list,128,0,&addr,&addrlen);
+    if(n==-1)/*error*/exit(1);
+    list[n] = '\0';
+    printf("echo: %s\n", list);
 
+    //Verificar se ja ha um id
+    int i =0;
+    int aux=0;
+    while(i!=n && aux==0){
+        if(i==0||list[i-1]=='\n'){
+            if(list[i]==id[0]&&list[i+1]==id[1]){
+                aux=1;
+            }
+        }
+        i++;
+    }
+
+    if(strcmp(com,"join")==0){
+        if(aux==1){
+        snprintf(id, sizeof(id), "%02d", rand() % 100);
+        aux=0;
+        }
+        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,porta);
+        printf("%s\n",buff);
+    }
+    else{
+        if(strcmp(com,"leave")==0){
+            if(aux==0){
+                printf("Error, no Node found");
+                exit(0);
+            }
+            sprintf(buff,"UNREG %s %s\n",net,id);
+            printf("%s\n",buff);
+        }
+        else{
+            exit(0);
+        }
+    }
+
+    //Enviar Join 
     n=sendto(fd,buff,128,0,res->ai_addr,res->ai_addrlen);
     if(n==-1)/*error*/exit(1);
     
