@@ -95,3 +95,35 @@ int clientTCP(){
 
     return fd;
 }
+
+int messageTCP(int fd, char* send){
+    ssize_t nbytes,nleft,nwritten,nread;
+    char buffer[128];
+    char* ptr;
+
+    ptr = strcpy(buffer, send);
+    nbytes = strlen(send);
+    nleft = nbytes;
+
+    while (nleft > 0) {
+    nwritten = write(fd, ptr, nleft);
+    if (nwritten <= 0) {exit(1);}
+    nleft -= nwritten;
+    ptr += nwritten;
+    }
+    nleft = nbytes;
+    ptr = buffer;
+
+    while (nleft > 0) {
+    nread = read(fd, ptr, nleft);
+    if (nread == -1) {exit(1);}
+    else if (nread == 0) {break;}
+    nleft -= nread;
+    ptr += nread;
+    }
+    nread = nbytes - nleft;
+    buffer[nread] = '\0';
+
+    printf("Echo from server: %s\n", buffer);
+
+}
