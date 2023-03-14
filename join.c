@@ -16,18 +16,16 @@
 #include "join.h"
 #include "udptcp.h"
 
-int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP, char* id_to_connect){
-    //REG net id ip_da_maquina portaTCP
+int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP, char* id_to_connect){
     char recv[128];
     char send[128];
     char list[128];
 
     //Receber lista de Nos
     clientUDP(regIP,regUDP, "NODES 055", list);
+
     //Verificar se ja ha um id
-    int aux;
-    if(strcmp(com,"join")==0){
-        aux=1;
+    int aux=1;
         while(aux==1){
             aux=verify_id(id,list);
             if(aux==1){
@@ -38,21 +36,27 @@ int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* 
         printf("%s\n",id_to_connect);
         sprintf(send,"REG %s %s %s %s\n",net,id,ip,regTCP);
         //printf("%s\n",send);
+
+    clientUDP(regIP,regUDP,send, recv);
+
+    return 0;
+}
+
+int leave(char* net,char* id,char* regIP,char* regUDP){
+    char recv[128];
+    char send[128];
+    char list[128];
+
+    //Receber lista de Nos
+    clientUDP(regIP,regUDP, "NODES 055", list);
+
+    int aux=verify_id(id,list);
+    if(aux==0){
+        printf("Error, no Node found");
+        exit(0);
     }
-    else{
-        if(strcmp(com,"leave")==0){
-            aux=verify_id(id,list);
-            if(aux==0){
-                printf("Error, no Node found");
-                exit(0);
-            }
-            sprintf(send,"UNREG %s %s\n",net,id);
-            //printf("%s\n",send);
-        }
-        else{
-            exit(0);
-        }
-    }
+    sprintf(send,"UNREG %s %s\n",net,id);
+    //printf("%s\n",send);
     clientUDP(regIP,regUDP,send, recv);
 
     return 0;

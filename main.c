@@ -75,14 +75,16 @@ int main(int argc, char *argv[ ])
             if(FD_ISSET(0,&testfds)){
                 fgets(user_input, 20, stdin);
                 sscanf(user_input,"%s %s %s\n",com,net,id);
-                //printf("%s,%s,%s\n",com,net,id);
-                if(strcmp(com,"join")==0||strcmp(com,"leave")==0){
                     if(strlen(net)!=3 || strlen(id)!=2){
                         printf("Incorrect input!");
                         exit(0);
                     }
+                if(strcmp(com,"join")==0){
+                    join(net,id,regIP,regUDP,ip,regTCP,id_to_connect);
                 }
-                join(com,net,id,regIP,regUDP,ip,regTCP,id_to_connect);
+                if(strcmp(com,"leave")==0){
+                    leave(net,id,regIP,regUDP);
+                }
             }
             if(FD_ISSET(fdTCP,&testfds)){
                 printf("recebeu mensagem tcp: ");
