@@ -13,10 +13,12 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "udptcp.h"
+#include "join.h"
 
-int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP);
-int verify_id(char* id,char* list, int n); //returns 1 if id is in list, 0 if it inst
-int choose_id(char* id,char* list, int n);
+
+//wsl hostname -i <-ip do wsl
+//netcat [ip-address] [port] <-cliente TCP
 
 typedef struct node
 {
@@ -31,15 +33,6 @@ typedef struct node
 int main(int argc, char *argv[ ])
 {
     srand(time(NULL));
-    //Select Variables
-    fd_set inputs, testfds;
-    //struct timeval timeout;
-    //int i,out_fds,n,errcode;
-    int out_fds;
-    //int tcpfd;
-    FD_ZERO(&inputs); // Clear inputs
-    FD_SET(0,&inputs); // Set standard input channel on
-    //FD_SET(tcpfd,&inputs);
 
     //My variables
     char user_input[12];
@@ -49,6 +42,24 @@ int main(int argc, char *argv[ ])
     char regUDP[]="59000";
     char regTCP[]="58000";
     char ip[]="194.210.157.117";
+    char id_to_connect[32];
+
+    //servidor TCP
+    
+    int newfd;
+    ssize_t n,nw;
+    char *ptr,buffer[128];
+    struct sockaddr addr; 
+    socklen_t addrlen;
+    int fdTCP=serverTCP(regTCP,addr,addrlen);
+
+    //Select Variables
+    fd_set inputs, testfds;
+    int out_fds;
+    //struct timeval timeout;
+    FD_ZERO(&inputs); // Clear inputs
+    FD_SET(0,&inputs); // Set standard input channel on
+    FD_SET(fdTCP,&inputs);
 
     while(1)
     {
@@ -71,122 +82,24 @@ int main(int argc, char *argv[ ])
                         exit(0);
                     }
                 }
-                join(com,net,id,regIP,regUDP,ip,regTCP);
+                join(com,net,id,regIP,regUDP,ip,regTCP,id_to_connect);
             }
-            /*
-            if(FD_ISSET(tcpfd,&testfds)){
-                printf("recebeu mensagem tcp");
+            if(FD_ISSET(fdTCP,&testfds)){
+                printf("recebeu mensagem tcp: ");
+                addrlen=sizeof(addr);
+                if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
+                while((n=read(newfd,buffer,128))!=0){if(n==-1)exit(1);
+                ptr=&buffer[0];
+                printf("%s\n",buffer);
+                while(n>0){if((nw=write(newfd,ptr,n))<=0)exit(1);
+                n-=nw; ptr+=nw;}
+                }
+                close(newfd);
             }
-            */
         }
         
     }
-    
+    close(fdTCP);
     return 0;
 }
 
-int join(char* com, char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP){
-        //REG net id ip_da_maquina portaTCP
-    struct addrinfo hints,*res;
-    struct sockaddr addr;
-    socklen_t addrlen;
-    int fd,errcode;
-    ssize_t n;
-    char buffer[128+1];
-    char buff[128];
-    char list[128];
-
-    fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
-    if(fd==-1)/*error*/exit(1);
-
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET;//IPv4
-    hints.ai_socktype=SOCK_DGRAM;//UDP socket
-
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",regUDP,&hints,&res);
-    if(errcode!=0){
-        printf("UDP Failed!");
-        exit(1);}
-    
-    //Receber Lista de Nodes
-    n=sendto(fd,"NODES 055",128,0,res->ai_addr,res->ai_addrlen);
-    if(n==-1)exit(1);
-    addrlen=sizeof(addr);
-    n=recvfrom(fd,list,128,0,&addr,&addrlen);
-    if(n==-1)/*error*/exit(1);
-    list[n] = '\0';
-    printf("echo: %s\n", list);
-
-    //Verificar se ja ha um id
-    int aux;
-
-    if(strcmp(com,"join")==0){
-        aux=1;
-        while(aux==1){
-            aux=verify_id(id,list,n);
-            if(aux==1){
-            snprintf(id, sizeof(id), "%02d", rand() % 100);
-            }
-        }
-        choose_id(id,list,n);
-        sprintf(buff,"REG %s %s %s %s\n",net,id,ip,regTCP);
-        printf("%s\n",buff);
-    }
-    else{
-        if(strcmp(com,"leave")==0){
-            aux=verify_id(id,list,n);
-            if(aux==0){
-                printf("Error, no Node found");
-                exit(0);
-            }
-            sprintf(buff,"UNREG %s %s\n",net,id);
-            printf("%s\n",buff);
-        }
-        else{
-            exit(0);
-        }
-    }
-
-    //Enviar Join 
-    n=sendto(fd,buff,128,0,res->ai_addr,res->ai_addrlen);
-    if(n==-1)/*error*/exit(1);
-    
-    //Receber resposta
-    addrlen=sizeof(addr);
-    n=recvfrom(fd,buffer,128,0,&addr,&addrlen);
-    if(n==-1)/*error*/exit(1);
-
-    buffer[n] = '\0';
-    printf("echo: %s\n", buffer);
-    close(fd);
-    freeaddrinfo(res);
-    
-    return 0;
-}
-
-int verify_id(char* id,char* list,int n){
-    int i =0;
-    int aux=0;
-    while(i!=n && aux==0){
-        if(i==0||list[i-1]=='\n'){
-            if(list[i]==id[0]&&list[i+1]==id[1]){
-                aux=1;
-            }
-        }
-        i++;
-    }
-return aux;
-}
-
-int choose_id(char* id,char* list, int n){
-    int i=0;
-    int number_of_ids=0;
-    while(i!=n){
-        if(i==0||list[i-1]=='\n'){
-            number_of_ids++;
-        }
-        i++;
-    }
-    int choosen_id= rand() % (number_of_ids-1) + 1;
-    return 0;
-}
