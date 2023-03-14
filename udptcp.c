@@ -79,7 +79,7 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     return 0;
 }
 
-int clientTCP(){
+int clientTCP(char* bootIP, char* bootTCP){
     struct addrinfo hints,*res;
     int fd,n;
 
@@ -88,7 +88,7 @@ int clientTCP(){
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;//IPv4
     hints.ai_socktype=SOCK_STREAM;//TCP socket
-    n=getaddrinfo("tejo.tecnico.ulisboa.pt","58001",&hints,&res);
+    n=getaddrinfo(bootIP,bootTCP,&hints,&res);
     if(n!=0)/*error*/exit(1);
     n=connect(fd,res->ai_addr,res->ai_addrlen);
     if(n==-1)/*error*/exit(1);

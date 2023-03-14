@@ -15,7 +15,7 @@
 
 #include "udptcp.h"
 #include "join.h"
-
+#include "djoin.h"
 
 //wsl hostname -i <-ip do wsl
 //netcat [ip-address] [port] <-cliente TCP
@@ -40,18 +40,23 @@ int main(int argc, char *argv[ ])
     char com[6];
     char regIP[]="193.136.138.142";
     char regUDP[]="59000";
-    char regTCP[]="58000";
+    char TCP[]="58000";
     char ip[]="194.210.157.117";
     char id_to_connect[32];
+    char bootid[3];
+    char bootIP[16];
+    char bootTCP[6];
 
     //servidor TCP
-    
     int newfd;
     ssize_t n,nw;
     char *ptr,buffer[128];
     struct sockaddr addr; 
     socklen_t addrlen;
-    int fdTCP=serverTCP(regTCP,addr,addrlen);
+    int fdTCP=serverTCP(TCP,addr,addrlen);
+
+    //cliente TCP
+    int fd_connect;
 
     //Select Variables
     fd_set inputs, testfds;
@@ -80,7 +85,9 @@ int main(int argc, char *argv[ ])
                         exit(0);
                     }
                 if(strcmp(com,"join")==0){
-                    join(net,id,regIP,regUDP,ip,regTCP,id_to_connect);
+                    join(net,id,regIP,regUDP,ip,TCP,id_to_connect);
+                    sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+                    fd_connect = clientTCP(bootIP, bootTCP);
                 }
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
@@ -101,6 +108,7 @@ int main(int argc, char *argv[ ])
         }
         
     }
+    close(fd_connect);
     close(fdTCP);
     return 0;
 }

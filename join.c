@@ -16,7 +16,7 @@
 #include "join.h"
 #include "udptcp.h"
 
-int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP, char* id_to_connect){
+int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* TCP, char* id_to_connect){
     char recv[128];
     char send[128];
     char list[128];
@@ -32,10 +32,10 @@ int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* regTCP, cha
             snprintf(id, sizeof(id), "%02d", rand() % 100);
             }
         }
-        choose_id(id,list,id_to_connect);
-        printf("%s\n",id_to_connect);
-        sprintf(send,"REG %s %s %s %s\n",net,id,ip,regTCP);
-        //printf("%s\n",send);
+    choose_id(id,list,id_to_connect);
+    printf("%s\n",id_to_connect);
+    sprintf(send,"REG %s %s %s %s\n",net,id,ip,TCP);
+    //printf("%s\n",send);
 
     clientUDP(regIP,regUDP,send, recv);
 
