@@ -97,33 +97,23 @@ int clientTCP(char* bootIP, char* bootTCP){
 }
 
 int messageTCP(int fd, char* send){
-    ssize_t nbytes,nleft,nwritten,nread;
-    char buffer[128];
-    char* ptr;
+    if (write(fd, send, strlen(send)) == -1) {exit(1);}
+    return 0;
+}
 
-    ptr = strcpy(buffer, send);
-    nbytes = strlen(send);
-    nleft = nbytes;
+int responseTCP(int fd,char* recv){
+    if (read(fd, recv, sizeof(recv)) == -1) {exit(1);}
+    return 0;
 
-    while (nleft > 0) {
-    nwritten = write(fd, ptr, nleft);
-    if (nwritten <= 0) {exit(1);}
-    nleft -= nwritten;
-    ptr += nwritten;
-    }
-    nleft = nbytes;
-    ptr = buffer;
+}
 
-    while (nleft > 0) {
-    nread = read(fd, ptr, nleft);
-    if (nread == -1) {exit(1);}
-    else if (nread == 0) {break;}
-    nleft -= nread;
-    ptr += nread;
-    }
-    nread = nbytes - nleft;
-    buffer[nread] = '\0';
+int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP, int* fd_int, int* num_ints){
+    int newfd;
 
-    printf("Echo from server: %s\n", buffer);
+    addrlen=sizeof(addr);
+    if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
+    fd_int[*num_ints]=newfd;
+    (*num_ints)++;
 
+    return 0;
 }

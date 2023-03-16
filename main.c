@@ -22,41 +22,41 @@
 
 typedef struct node
 {
-    int net;
-    int id;
-    int port;
-    struct node *ext;
-    struct node *bck;
-    struct node *intr;
+    char self[32];
+    char ext[32];
+    char bck[32];
+    char intr[][32];
 }node;
 
 int main(int argc, char *argv[ ])
 {
     srand(time(NULL));
-
+    struct node app;
+    
     //My variables
     char user_input[12];
     char net[4], id[3];
     char com[6];
-    char regIP[]="193.136.138.142";
-    char regUDP[]="59000";
-    char TCP[]="58000";
-    char ip[]="194.210.157.117";
-    char id_to_connect[32];
-    char bootid[3];
-    char bootIP[16];
-    char bootTCP[6];
+    char regIP[]="193.136.138.142"; //IP of "Tejo"
+    char regUDP[]="59000"; //port of "tejo"
+    char TCP[]="58000"; //our port that is going to be used on the TCP server
+    char ip[]="194.210.157.117"; //our ip
+    char id_to_connect[32]; //contact information of the node we want to connect to
+    char bootid[3];  //id of the node we want to connect to
+    char bootIP[16]; //IP of the node we want to connect to
+    char bootTCP[6]; //TCP port of the node we want to connect to
+    char recv[36]; //string to send messages
+    char send[46]; //string to recieve messages
+    int i;
 
-    //servidor TCP
-    int newfd;
-    ssize_t n,nw;
-    char *ptr,buffer[128];
+    int fd_int[99]; //array with sockets from nodes connected to our TCP server
+    int num_ints = 0;//number of nodes connected to our TCP server
+
     struct sockaddr addr; 
     socklen_t addrlen;
-    int fdTCP=serverTCP(TCP,addr,addrlen);
+    int fdTCP=serverTCP(TCP,addr,addrlen); //initiate TCP server
 
-    //cliente TCP
-    int fd_connect;
+    int fd_client; //socket to connect with another node's TCP server
 
     //Select Variables
     fd_set inputs, testfds;
@@ -65,6 +65,7 @@ int main(int argc, char *argv[ ])
     FD_ZERO(&inputs); // Clear inputs
     FD_SET(0,&inputs); // Set standard input channel on
     FD_SET(fdTCP,&inputs);
+    FD_SET(fd_client,&inputs);
 
     while(1)
     {
@@ -84,31 +85,50 @@ int main(int argc, char *argv[ ])
                         printf("Incorrect input!");
                         exit(0);
                     }
+                sprintf(app.self,"%s %s %s",id,ip,TCP);
                 if(strcmp(com,"join")==0){
                     join(net,id,regIP,regUDP,ip,TCP,id_to_connect);
-                    sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
-                    fd_connect = clientTCP(bootIP, bootTCP);
+                    if(strcmp(id_to_connect,"empty")==0){
+                        strcpy(app.ext,app.self);
+                        strcpy(app.bck,app.self);
+                    }
+                    else{
+                        strcpy(app.ext,id_to_connect);
+                        sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+                        fd_client = clientTCP(bootIP, bootTCP);
+                        //Send welcome message with contact
+                        sprintf(send,"NEW %s",app.self);
+                        messageTCP(fd_client,send);
+                        responseTCP(fd_client,recv);
+                        sscanf(recv,"EXTERN %s",app.bck); //Read recieved message
+                    }
                 }
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
                 }
             }
             if(FD_ISSET(fdTCP,&testfds)){
-                printf("recebeu mensagem tcp: ");
-                addrlen=sizeof(addr);
-                if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
-                while((n=read(newfd,buffer,128))!=0){if(n==-1)exit(1);
-                ptr=&buffer[0];
-                printf("%s\n",buffer);
-                while(n>0){if((nw=write(newfd,ptr,n))<=0)exit(1);
-                n-=nw; ptr+=nw;}
+                printf("Novo Pedido Conexão\n");
+                connectTCP(addr,addrlen,fdTCP,fd_int,&num_ints);
+                responseTCP(fd_int[num_ints-1],recv);
+                sscanf(recv,"NEW %s",app.intr[num_ints-1]);
+                sprintf(send,"EXTERN %s",app.self);
+                messageTCP(fd_int[num_ints-1],send);
+                FD_SET(fd_int[num_ints-1],&inputs);
+            }
+            for (i = 0; i < num_ints; i++) {
+                if(FD_ISSET(fd_int[num_ints],&testfds)){
+                    printf("Mensagem TCP de um dos nós");
                 }
-                close(newfd);
             }
         }
         
     }
-    close(fd_connect);
+    //close everything
+    for (i = 0; i < num_ints; i++) {
+        close(fd_int[i]);
+    }
+    close(fd_client);
     close(fdTCP);
     return 0;
 }
