@@ -16,22 +16,15 @@
 #include "udptcp.h"
 #include "join.h"
 #include "djoin.h"
+#include "struct.h"
 
 //wsl hostname -i <-ip do wsl
 //netcat [ip-address] [port] <-cliente TCP
 
-typedef struct node
-{
-    char self[32];
-    char ext[32];
-    char bck[32];
-    char intr[][32];
-}node;
-
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
-    struct node app;
+    node app;
 
     if (argc != 3) {
         printf("Wrong Arguments!\n");
@@ -43,12 +36,12 @@ int main(int argc, char *argv[])
     //char ip[]="194.210.157.117"; //our ip
 
     //My variables
-    char user_input[12];
+    char user_input[16];
     char net[4], id[3];
     char com[6];
     char regIP[]="193.136.138.142"; //IP of "Tejo"
     char regUDP[]="59000"; //port of "tejo"
-    char id_to_connect[32]; //contact information of the node we want to connect to
+    char id_to_connect[33]; //contact information of the node we want to connect to
     char bootid[3];  //id of the node we want to connect to
     char bootIP[16]; //IP of the node we want to connect to
     char bootTCP[6]; //TCP port of the node we want to connect to
@@ -69,10 +62,6 @@ int main(int argc, char *argv[])
     fd_set inputs;
     int out_fds;
     //struct timeval timeout;
-    //FD_ZERO(&inputs); // Clear inputs
-    //FD_SET(0,&inputs); // Set standard input channel on
-    //FD_SET(fdTCP,&inputs);
-    //FD_SET(fd_client,&inputs);
 
     while(1)
     {
@@ -95,62 +84,45 @@ int main(int argc, char *argv[])
             if(FD_ISSET(0,&inputs)){
                 FD_CLR(0,&inputs);
                 fgets(user_input, 64, stdin);
-                sscanf(user_input,"%s %s %s\n",com,net,id);
-                //sscanf(user_input,"%s %s %s %s %s %s\n",com,net,id,bootid,bootIP,bootTCP);
-                    if(strlen(net)!=3 || strlen(id)!=2){
-                        printf("Incorrect input!");
-                        exit(0);
-                    }
+                sscanf(user_input,"%s %s %s",com,net,id);
+                if(strlen(net)!=3 || strlen(id)!=2){
+                    printf("Incorrect input!");
+                    exit(0);
+                }
                 sprintf(app.self,"%s %s %s",id,ip,TCP);
+
                 if(strcmp(com,"join")==0){
                     joinpt1(net,id,regIP,regUDP,id_to_connect);
-
-                    if(strcmp(id_to_connect,"empty")==0){
+                    sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+                    if(strcmp(id,bootid)==0){
                         strcpy(app.ext,app.self);
-                        strcpy(app.bck,app.self);
-                        printf("%s\n", app.bck);
+                        strcpy(app.bck,app.self);                      
                     }
                     else{
-                        strcpy(app.ext,id_to_connect);
-                        sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
-                        fd_client = clientTCP(bootIP, bootTCP);
-                        //FD_SET(fd_client,&inputs);
-                        //Send welcome message with contact
-                        sprintf(send,"NEW %s",app.self);
-                        messageTCP(fd_client,send);
-                        responseTCP(fd_client,recv);
-                        sscanf(recv,"EXTERN %s",app.bck); //Read recieved message
-                        printf("%s\n",recv);
+                        fd_client=djoin(&app,id_to_connect);
                     }
-
+                    //FD_SET(fd_client,&inputs);
                     joinpt2(net,id,regIP,regUDP,ip,TCP);
                 }
+
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
                 }
-                if(strcmp(com,"djoin")==0){
-                    sscanf(user_input,"%s %s %s %s %s %s\n",com,net,id,bootid,bootIP,bootTCP);
-                    strcpy(bootTCP,"59000");
-                    sprintf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
 
+                if(strcmp(com,"djoin")==0){
+                    sscanf(user_input,"%s %s %s %s %s %s",com,net,id,bootid,bootIP,bootTCP);
+                    sprintf(id_to_connect,"%s %s %s",bootid,bootIP,bootTCP);
+                    
                     if(strcmp(id,bootid)==0){
                         strcpy(app.ext,app.self);
-                        strcpy(app.bck,app.self);
-                        printf("%s\n", app.bck);                       
+                        strcpy(app.bck,app.self);                      
                     }
-
                     else{
-                        strcpy(app.ext,id_to_connect);
-                        printf("%s\n",app.ext);
-                        fd_client = clientTCP(bootIP, bootTCP);
-                        //FD_SET(fd_client,&inputs);
-                        //Send welcome message with contact
-                        sprintf(send,"NEW %s",app.self);
-                        messageTCP(fd_client,send);
-                        responseTCP(fd_client,recv);
-                        sscanf(recv,"EXTERN %s",app.bck); //Read recieved message
-                        printf("%s\n",recv);
+                        fd_client=djoin(&app,id_to_connect);
                     }
+                    printf("app.ext: %s\n",app.ext);
+                    printf("app.bck: %s\n",app.bck);
+                    //FD_SET(fd_client,&inputs);
                 }
             }
             for (i = 0; i < num_ints; i++) {
@@ -164,11 +136,16 @@ int main(int argc, char *argv[])
                 printf("Novo Pedido Conexão\n");
                 connectTCP(addr,addrlen,fdTCP,fd_int,&num_ints);
                 responseTCP(fd_int[num_ints-1],recv);
-                sscanf(recv,"NEW %s",app.intr[num_ints-1]);
-                sprintf(send,"EXTERN %s",app.self);
+                sscanf(recv,"NEW %[^\n]",app.intr[num_ints-1]);
+                if(strcmp(app.self,app.ext)==0){
+                    strcpy(app.ext,app.intr[num_ints-1]);
+                }
+                sprintf(send,"EXTERN %s",app.ext);
                 messageTCP(fd_int[num_ints-1],send);
                 printf("Numero de internos:%d\n",num_ints);
-                printf("%s\n",recv);
+                //printf("%s\n",recv);
+                printf("app.ext: %s\n",app.ext);
+                printf("app.bck: %s\n",app.bck);
                 FD_SET(fd_int[num_ints-1],&inputs);
             }
             /*
@@ -177,8 +154,8 @@ int main(int argc, char *argv[])
                 printf("Mensagem do nó externo");
             }
             */
+
         }
-        
     }
     //close everything
     for (i = 0; i < num_ints; i++) {

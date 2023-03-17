@@ -10,7 +10,7 @@ all: $(PROJECT_NAME)
 $(PROJECT_NAME): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o $(PROJECT_NAME)
 
-main.o: main.c
+main.o: main.c struct.h
 udptcp.o: udptcp.c udptcp.h
 join.o: join.c join.h
 djoin.o: djoin.c djoin.h

@@ -100,7 +100,8 @@ int choose_id(char* id,char* list, char* id_to_connect){
         //printf("Random line: %s\n", lines[choosen_id]);
         strcpy(id_to_connect,lines[choosen_id]);
     }else{
-        strcpy(id_to_connect,"empty");
+        sprintf(id_to_connect,"%s 0 0\n",id);
+        //strcpy(id_to_connect,"empty");
     }
 
     return 0;

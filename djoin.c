@@ -14,3 +14,28 @@
 #include <signal.h>
 
 #include "djoin.h"
+#include "udptcp.h"
+#include "struct.h"
+
+
+int djoin(node *app, char* id_to_connect){
+    int fd_client;
+    char bootid[3];  //id of the node we want to connect to
+    char bootIP[16]; //IP of the node we want to connect to
+    char bootTCP[6]; //TCP port of the node we want to connect to
+    char recv[64]; //string to send messages
+    char send[64]; //string to recieve messages
+
+    sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+
+    strcpy(app->ext,id_to_connect);
+    fd_client = clientTCP(bootIP, bootTCP);
+    //Send welcome message with contact
+    sprintf(send,"NEW %s",app->self);
+    messageTCP(fd_client,send);
+    responseTCP(fd_client,recv);
+    sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
+    printf("%s\n",recv);
+
+    return fd_client;
+}

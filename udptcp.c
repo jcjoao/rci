@@ -84,14 +84,14 @@ int clientTCP(char* bootIP, char* bootTCP){
     int fd,n;
 
     fd=socket(AF_INET,SOCK_STREAM,0);//TCP socket
-    if(fd==-1)exit(1);//error
+    if(fd==-1){printf("Error with Socket\n");exit(1);}//error
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;//IPv4
     hints.ai_socktype=SOCK_STREAM;//TCP socket
     n=getaddrinfo(bootIP,bootTCP,&hints,&res);
-    if(n!=0)/*error*/exit(1);
+    if(n!=0){printf("Error with getaddrinfo\n");exit(1);}
     n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1)/*error*/exit(1);
+    if(n==-1){printf("Error with Connect\n");exit(1);}
 
     return fd;
 }
