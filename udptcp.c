@@ -97,23 +97,25 @@ int clientTCP(char* bootIP, char* bootTCP){
 }
 
 int messageTCP(int fd, char* send){
-    if (write(fd, send, strlen(send)) == -1) {exit(1);}
+    if (write(fd, send, 128) == -1) {exit(1);}
     return 0;
 }
 
 int responseTCP(int fd,char* recv){
-    if (read(fd, recv, sizeof(recv)) == -1) {exit(1);}
+    if (read(fd, recv, 128) == -1) {exit(1);}
     return 0;
 
 }
 
 int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP, int* fd_int, int* num_ints){
-    int newfd;
+    //int newfd;
 
     addrlen=sizeof(addr);
-    if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
-    fd_int[*num_ints]=newfd;
+    //if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
+    //fd_int[*num_ints]=newfd;
+    if((fd_int[*num_ints]=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
     (*num_ints)++;
 
+    //close(newfd);
     return 0;
 }

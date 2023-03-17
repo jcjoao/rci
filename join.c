@@ -16,13 +16,12 @@
 #include "join.h"
 #include "udptcp.h"
 
-int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* TCP, char* id_to_connect){
-    char recv[128];
-    char send[128];
+int joinpt1(char* net,char* id,char* regIP,char* regUDP, char* id_to_connect){
     char list[128];
-
+    char send[128];
+    sprintf(send,"NODES %s",net);
     //Receber lista de Nos
-    clientUDP(regIP,regUDP, "NODES 055", list);
+    clientUDP(regIP,regUDP, send, list);
 
     //Verificar se ja ha um id
     int aux=1;
@@ -34,11 +33,15 @@ int join(char* net,char* id,char* regIP,char* regUDP,char* ip, char* TCP, char* 
         }
     choose_id(id,list,id_to_connect);
     printf("%s\n",id_to_connect);
+    return 0;
+}
+int joinpt2(char* net,char* id,char* regIP,char* regUDP, char* ip,char* TCP){
+    char recv[128];
+    char send[128];
+
     sprintf(send,"REG %s %s %s %s\n",net,id,ip,TCP);
     //printf("%s\n",send);
-
     clientUDP(regIP,regUDP,send, recv);
-
     return 0;
 }
 
