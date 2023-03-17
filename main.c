@@ -94,8 +94,9 @@ int main(int argc, char *argv[])
         else{
             if(FD_ISSET(0,&inputs)){
                 FD_CLR(0,&inputs);
-                fgets(user_input, 20, stdin);
+                fgets(user_input, 64, stdin);
                 sscanf(user_input,"%s %s %s\n",com,net,id);
+                //sscanf(user_input,"%s %s %s %s %s %s\n",com,net,id,bootid,bootIP,bootTCP);
                     if(strlen(net)!=3 || strlen(id)!=2){
                         printf("Incorrect input!");
                         exit(0);
@@ -126,6 +127,30 @@ int main(int argc, char *argv[])
                 }
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
+                }
+                if(strcmp(com,"djoin")==0){
+                    sscanf(user_input,"%s %s %s %s %s %s\n",com,net,id,bootid,bootIP,bootTCP);
+                    strcpy(bootTCP,"59000");
+                    sprintf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+
+                    if(strcmp(id,bootid)==0){
+                        strcpy(app.ext,app.self);
+                        strcpy(app.bck,app.self);
+                        printf("%s\n", app.bck);                       
+                    }
+
+                    else{
+                        strcpy(app.ext,id_to_connect);
+                        printf("%s\n",app.ext);
+                        fd_client = clientTCP(bootIP, bootTCP);
+                        //FD_SET(fd_client,&inputs);
+                        //Send welcome message with contact
+                        sprintf(send,"NEW %s",app.self);
+                        messageTCP(fd_client,send);
+                        responseTCP(fd_client,recv);
+                        sscanf(recv,"EXTERN %s",app.bck); //Read recieved message
+                        printf("%s\n",recv);
+                    }
                 }
             }
             for (i = 0; i < num_ints; i++) {
