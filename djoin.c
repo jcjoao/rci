@@ -35,7 +35,20 @@ int djoin(node *app, char* id_to_connect){
     messageTCP(fd_client,send);
     responseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
-    printf("%s\n",recv);
+    printf("Mensagem recebida: %s\n",recv);
 
     return fd_client;
+}
+
+int exitapp(int *fd_int,int *num_ints, int *fd_client, node *app, int *ifclient){
+    int i;
+    for (i = 0; i < *num_ints; i++) {
+        strcpy(app->intr[i],"\0");
+        close(fd_int[i]);
+    }
+    *num_ints=0;
+    strcpy(app->bck, "\0");
+    strcpy(app->ext, "\0");
+    if(*ifclient==1){close(*fd_client);}
+    *ifclient=0;
 }

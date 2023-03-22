@@ -102,9 +102,14 @@ int messageTCP(int fd, char* send){
 }
 
 int responseTCP(int fd,char* recv){
-    if (read(fd, recv, 128) == -1) {exit(1);}
-    return 0;
+    int socket_state;
+    socket_state = read(fd, recv, 128);
+    if (socket_state == -1) {exit(1);}
+    if(socket_state == 0){
+        strcpy(recv,"LEAVE");
+    }
 
+    return 0;
 }
 
 int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP, int* fd_int, int* num_ints){

@@ -63,16 +63,16 @@ int main(int argc, char *argv[])
     int out_fds;
     //struct timeval timeout;
 
+    int ifclient = 0;
+
     while(1)
     {
+        //Inicializar variaveis do select
         FD_ZERO(&inputs); // Clear inputs
         FD_SET(0,&inputs);
         FD_SET(fdTCP,&inputs);
-        //FD_SET(fd_client,&inputs);
-
-        for (i = 0; i < num_ints; i++) {
-            FD_SET(fd_int[i],&inputs);
-        }
+        if(ifclient==1){FD_SET(fd_client,&inputs);}
+        for (i = 0; i < num_ints; i++) {FD_SET(fd_int[i],&inputs);}
         
         out_fds=select(FD_SETSIZE,&inputs,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
         
@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
                 exit(1);
         }
         else{
+            //Receber inputs no teclado
             if(FD_ISSET(0,&inputs)){
                 FD_CLR(0,&inputs);
                 fgets(user_input, 64, stdin);
@@ -101,12 +102,14 @@ int main(int argc, char *argv[])
                     else{
                         fd_client=djoin(&app,id_to_connect);
                     }
-                    //FD_SET(fd_client,&inputs);
+                    FD_SET(fd_client,&inputs);
+                    ifclient=1;
                     joinpt2(net,id,regIP,regUDP,ip,TCP);
                 }
 
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
+                    exitapp(fd_int, &num_ints, &fd_client,&app,&ifclient);
                 }
 
                 if(strcmp(com,"djoin")==0){
@@ -122,15 +125,26 @@ int main(int argc, char *argv[])
                     }
                     printf("app.ext: %s\n",app.ext);
                     printf("app.bck: %s\n",app.bck);
-                    //FD_SET(fd_client,&inputs);
+                    FD_SET(fd_client,&inputs);
+                    ifclient=1;
                 }
             }
+
+            //Receber Mensagens dos Nos Internos
             for (i = 0; i < num_ints; i++) {
-                if(FD_ISSET(fd_int[num_ints],&inputs)){
-                    FD_CLR(fd_int[num_ints],&inputs);
-                    printf("Mensagem TCP de um dos nós");
+                if(FD_ISSET(fd_int[i],&inputs)){
+                    FD_CLR(fd_int[i],&inputs);
+                    printf("Mensagem TCP de um dos nós internos\n");
+                    responseTCP(fd_int[i],recv);
+                    if(strcmp(recv,"LEAVE")==0){
+                        printf("Nó interno desconentou-se\n");
+                        close(fd_int[i]);
+                        num_ints--;
+                    }
                 }
             }
+
+            //Receber Novos Pedidos de Conexao
             if(FD_ISSET(fdTCP,&inputs)){
                 FD_CLR(fdTCP,&inputs);
                 printf("Novo Pedido Conexão\n");
@@ -148,20 +162,45 @@ int main(int argc, char *argv[])
                 printf("app.bck: %s\n",app.bck);
                 FD_SET(fd_int[num_ints-1],&inputs);
             }
-            /*
+
+            //Receber Mensagens de nós externos
+            if(ifclient==1){
             if(FD_ISSET(fd_client,&inputs)){
                 FD_CLR(fd_client,&inputs);
                 printf("Mensagem do nó externo");
-            }
-            */
+                responseTCP(fd_client,recv);
+                
+                if(strcmp(recv,"LEAVE")==0){
+                    printf("Nó externo desconentou-se\n");
+                    strcpy(app.ext,app.bck);
+                    close(fd_client);
+                    strcpy(id_to_connect,app.ext);
+                    fd_client=djoin(&app,id_to_connect);
+                    printf("Novo nó exterior: %s\n",app.ext);
+                    printf("Novo nó de recuperação: %s\n",app.bck);
+                    for (i = 0; i < num_ints; i++) {
+                        sprintf(send,"EXTERN %s",app.ext);
+                        messageTCP(fd_int[i],send);
+                    }
+                }else{
+                    sscanf(recv,"%s",com);
+                    if(strcmp(com,"EXTERN")==0){
+                        printf("Mensagem com novo backup\n");
+                        sscanf(recv,"EXTERN %[^\n]",app.bck);
+                        printf("Novo nó de backup: %s\n",app.bck);
+                    }
+                }
+            }}
 
         }
     }
     //close everything
+    /*
     for (i = 0; i < num_ints; i++) {
         close(fd_int[i]);
     }
     close(fd_client);
+    */
     close(fdTCP);
     return 0;
 }
