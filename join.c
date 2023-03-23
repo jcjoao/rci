@@ -51,7 +51,8 @@ int leave(char* net,char* id,char* regIP,char* regUDP){
     char list[128];
 
     //Receber lista de Nos
-    clientUDP(regIP,regUDP, "NODES 055", list);
+    sprintf(send,"NODES %s",net);
+    clientUDP(regIP,regUDP, send, list);
 
     int aux=verify_id(id,list);
     if(aux==0){

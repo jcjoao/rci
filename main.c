@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
 {
     srand(time(NULL));
     node app;
+    app.num_ints=0;
 
     if (argc != 3) {
         printf("Wrong Arguments!\n");
@@ -32,8 +33,6 @@ int main(int argc, char *argv[])
     }
     char *ip = argv[1]; //our ip
     char *TCP = argv[2]; //our port that is going to be used on the TCP server
-    //char TCP[]="58000"; //our port that is going to be used on the TCP server
-    //char ip[]="194.210.157.117"; //our ip
 
     //My variables
     char user_input[16];
@@ -48,32 +47,30 @@ int main(int argc, char *argv[])
     char recv[46]; //string to send messages
     char send[46]; //string to recieve messages
     int i=0;
+    int j=0;
+    int k=0;
+    char idaux[3];
 
-    int fd_int[99]; //array with sockets from nodes connected to our TCP server
-    int num_ints = 0;//number of nodes connected to our TCP server
+    int fd[100]; //array with sockets from nodes connected to our TCP server
+    for(i=0;i<100;i++){fd[i]=-1;} //every element to -1
 
     struct sockaddr addr; 
     socklen_t addrlen;
     int fdTCP=serverTCP(TCP,addr,addrlen); //initiate TCP server
-
-    int fd_client; //socket to connect with another node's TCP server
+    int newfd;
 
     //Select Variables
     fd_set inputs;
     int out_fds;
     //struct timeval timeout;
-
-    int ifclient = 0;
-
     while(1)
     {
         //Inicializar variaveis do select
-        FD_ZERO(&inputs); // Clear inputs
+        FD_ZERO(&inputs);
         FD_SET(0,&inputs);
         FD_SET(fdTCP,&inputs);
-        if(ifclient==1){FD_SET(fd_client,&inputs);}
-        for (i = 0; i < num_ints; i++) {FD_SET(fd_int[i],&inputs);}
-        
+        for (i = 0; i < 100; i++) {if(fd[i]!= -1 ){FD_SET(fd[i],&inputs);}}
+
         out_fds=select(FD_SETSIZE,&inputs,(fd_set *)NULL,(fd_set *)NULL,(struct timeval *) NULL);
         
         if(out_fds==-1){
@@ -100,107 +97,115 @@ int main(int argc, char *argv[])
                         strcpy(app.bck,app.self);                      
                     }
                     else{
-                        fd_client=djoin(&app,id_to_connect);
+                        fd[atoi(bootid)]=djoin(&app,id_to_connect);
                     }
-                    FD_SET(fd_client,&inputs);
-                    ifclient=1;
                     joinpt2(net,id,regIP,regUDP,ip,TCP);
                 }
 
                 if(strcmp(com,"leave")==0){
                     leave(net,id,regIP,regUDP);
-                    exitapp(fd_int, &num_ints, &fd_client,&app,&ifclient);
+                    exitapp(fd,&app);
                 }
 
                 if(strcmp(com,"djoin")==0){
                     sscanf(user_input,"%s %s %s %s %s %s",com,net,id,bootid,bootIP,bootTCP);
                     sprintf(id_to_connect,"%s %s %s",bootid,bootIP,bootTCP);
-                    
                     if(strcmp(id,bootid)==0){
                         strcpy(app.ext,app.self);
                         strcpy(app.bck,app.self);                      
                     }
                     else{
-                        fd_client=djoin(&app,id_to_connect);
-                    }
-                    printf("app.ext: %s\n",app.ext);
-                    printf("app.bck: %s\n",app.bck);
-                    FD_SET(fd_client,&inputs);
-                    ifclient=1;
-                }
-            }
-
-            //Receber Mensagens dos Nos Internos
-            for (i = 0; i < num_ints; i++) {
-                if(FD_ISSET(fd_int[i],&inputs)){
-                    FD_CLR(fd_int[i],&inputs);
-                    printf("Mensagem TCP de um dos nós internos\n");
-                    responseTCP(fd_int[i],recv);
-                    if(strcmp(recv,"LEAVE")==0){
-                        printf("Nó interno desconentou-se\n");
-                        close(fd_int[i]);
-                        num_ints--;
+                        fd[atoi(bootid)]=djoin(&app,id_to_connect);
                     }
                 }
             }
 
             //Receber Novos Pedidos de Conexao
             if(FD_ISSET(fdTCP,&inputs)){
-                FD_CLR(fdTCP,&inputs);
                 printf("Novo Pedido Conexão\n");
-                connectTCP(addr,addrlen,fdTCP,fd_int,&num_ints);
-                responseTCP(fd_int[num_ints-1],recv);
-                sscanf(recv,"NEW %[^\n]",app.intr[num_ints-1]);
+                newfd = connectTCP(addr,addrlen,fdTCP);
+                responseTCP(newfd,recv);
+                sscanf(recv,"NEW %[^\n]",id_to_connect);
+                //Nó estava sozinho
                 if(strcmp(app.self,app.ext)==0){
-                    strcpy(app.ext,app.intr[num_ints-1]);
+                    strcpy(app.ext,id_to_connect);
+                }else{
+                    strcpy(app.intr[app.num_ints],id_to_connect);
+                    app.num_ints++;
                 }
                 sprintf(send,"EXTERN %s",app.ext);
-                messageTCP(fd_int[num_ints-1],send);
-                printf("Numero de internos:%d\n",num_ints);
+                messageTCP(newfd,send);
+                printf("Numero de internos:%d\n",app.num_ints);
                 //printf("%s\n",recv);
-                printf("app.ext: %s\n",app.ext);
-                printf("app.bck: %s\n",app.bck);
-                FD_SET(fd_int[num_ints-1],&inputs);
+                sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+                fd[atoi(bootid)]=newfd;
+                printf("Vizinho Externo: %s\n",app.ext);
+                printf("Nó de backup: %s\n",app.bck);
+                FD_CLR(fdTCP,&inputs);
             }
 
-            //Receber Mensagens de nós externos
-            if(ifclient==1){
-            if(FD_ISSET(fd_client,&inputs)){
-                FD_CLR(fd_client,&inputs);
-                printf("Mensagem do nó externo");
-                responseTCP(fd_client,recv);
-                
+            //Receber Novas Mensagens
+            for (i = 0; i < 100; i++) {
+            if(fd[i]!= -1 ){
+            if(FD_ISSET(fd[i],&inputs)){
+                printf("Mensagem TCP recebida, do nó com id:%d\n",i);
+                responseTCP(fd[i],recv);
                 if(strcmp(recv,"LEAVE")==0){
-                    printf("Nó externo desconentou-se\n");
-                    strcpy(app.ext,app.bck);
-                    close(fd_client);
-                    strcpy(id_to_connect,app.ext);
-                    fd_client=djoin(&app,id_to_connect);
-                    printf("Novo nó exterior: %s\n",app.ext);
-                    printf("Novo nó de recuperação: %s\n",app.bck);
-                    for (i = 0; i < num_ints; i++) {
-                        sprintf(send,"EXTERN %s",app.ext);
-                        messageTCP(fd_int[i],send);
-                    }
-                }else{
-                    sscanf(recv,"%s",com);
-                    if(strcmp(com,"EXTERN")==0){
-                        printf("Mensagem com novo backup\n");
-                        sscanf(recv,"EXTERN %[^\n]",app.bck);
-                        printf("Novo nó de backup: %s\n",app.bck);
+                    close(fd[i]);
+                    fd[i]=-1;
+                    //Ver se é externo
+                    sscanf(app.ext,"%s",idaux);
+                    if(atoi(idaux)==i){ //Mensagem de Vizinho externo
+                        printf("Vizinho externo desconentou-se!\n");
+                        if(strcmp(app.bck,app.self)!=0){//nao é ancora
+                            strcpy(app.ext,app.bck); //Backup passa a ser o externo
+                            sscanf(app.ext,"%s",idaux); //Buscar id do novo externo
+                            fd[atoi(idaux)]=djoin(&app,app.ext);//Junta-se ao novo ext, recebe novo bck
+                            //mandar mensagem a todos os internos com novo bck
+                            for (j = 0; j < 100; j++){ //Percorrer array sockets
+                            if(fd[j]!=-1 && j!=atoi(idaux)){ //os que nao forem -1, nem o externo (internos)
+                                sprintf(send,"EXTERN %s",app.ext);
+                                messageTCP(fd[j],send);
+                            }}
+                        }else{if(app.num_ints!=0){ //é ancora, escolhe novo ancora
+                            strcpy(app.ext,app.intr[app.num_ints-1]);
+                            if(fd[j]!=-1){ //os que nao forem -1, nem o externo (internos)
+                                sprintf(send,"EXTERN %s",app.ext);
+                                messageTCP(fd[j],send);
+                            }
+                            app.num_ints--;
+                        }else{strcpy(app.ext,app.self);}
+                        }
+                    }else{
+                        printf("Vizinho interno desconentou-se!\n");
+                        for(j=0;j < app.num_ints;j++){ //percorrer vizinhos externos
+                            sscanf(app.intr[j],"%s",idaux);
+                            if(i==atoi(idaux)){        //quando encontra o interno que mandou msg
+                                for(k=j;k<(app.num_ints-1);k++){
+                                    strcpy(app.intr[k], app.intr[k+1]);
+                                }
+                                app.num_ints--;
+                            }
+                        }
                     }
                 }
-            }}
+                sscanf(recv,"%s",com);
+                if(strcmp(com,"EXTERN")==0){
+                    printf("Mensagem com novo backup\n");
+                    sscanf(recv,"EXTERN %[^\n]",app.bck);
+                    printf("Novo nó de backup: %s\n",app.bck);
+                }
+                if(strcmp(com,"NEW")==0){
+                    printf("Mensagem com novo Interno\n");
+                    sscanf(recv,"NEW %[^\n]",app.intr[app.num_ints]);
+                    app.num_ints++;
+                }
+            FD_CLR(fd[i],&inputs);               
+            }}}
 
         }
     }
-    //close everything
-    /*
-    for (i = 0; i < num_ints; i++) {
-        close(fd_int[i]);
-    }
-    close(fd_client);
-    */
+
     close(fdTCP);
     return 0;
 }

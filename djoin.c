@@ -36,19 +36,20 @@ int djoin(node *app, char* id_to_connect){
     responseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
     printf("Mensagem recebida: %s\n",recv);
-
+    printf("Vizinho Externo: %s\n",app->ext);
+    printf("Nó de backup: %s\n",app->bck);
     return fd_client;
 }
 
-int exitapp(int *fd_int,int *num_ints, int *fd_client, node *app, int *ifclient){
+int exitapp(int *fd,node *app){
     int i;
-    for (i = 0; i < *num_ints; i++) {
-        strcpy(app->intr[i],"\0");
-        close(fd_int[i]);
+    for (i = 0; i < 100; i++) {
+        if(fd[i]!=-1){
+            close(fd[i]);
+            fd[i]=-1;
+        }
     }
-    *num_ints=0;
-    strcpy(app->bck, "\0");
-    strcpy(app->ext, "\0");
-    if(*ifclient==1){close(*fd_client);}
-    *ifclient=0;
+    app->num_ints=0;
+    strcpy(app->bck, app->self);
+    strcpy(app->ext, app->self);
 }

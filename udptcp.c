@@ -103,6 +103,7 @@ int messageTCP(int fd, char* send){
 
 int responseTCP(int fd,char* recv){
     int socket_state;
+    memset(recv, 0, sizeof(recv));
     socket_state = read(fd, recv, 128);
     if (socket_state == -1) {exit(1);}
     if(socket_state == 0){
@@ -112,15 +113,10 @@ int responseTCP(int fd,char* recv){
     return 0;
 }
 
-int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP, int* fd_int, int* num_ints){
-    //int newfd;
+int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP){
+    int newfd;
 
     addrlen=sizeof(addr);
-    //if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
-    //fd_int[*num_ints]=newfd;
-    if((fd_int[*num_ints]=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
-    (*num_ints)++;
-
-    //close(newfd);
-    return 0;
+    if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
+    return newfd;
 }
