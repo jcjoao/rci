@@ -36,8 +36,6 @@ int djoin(node *app, char* id_to_connect){
     responseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
     printf("Mensagem recebida: %s\n",recv);
-    printf("Vizinho Externo: %s\n",app->ext);
-    printf("Nó de backup: %s\n",app->bck);
     return fd_client;
 }
 

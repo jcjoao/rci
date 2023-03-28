@@ -17,6 +17,7 @@
 #include "join.h"
 #include "djoin.h"
 #include "struct.h"
+#include "names.h"
 
 //wsl hostname -i <-ip do wsl
 //netcat [ip-address] [port] <-cliente TCP
@@ -37,27 +38,36 @@ int main(int argc, char *argv[])
     //My variables
     char user_input[16];
     char net[4], id[3];
-    char com[6];
+    char com[12];
+    char com2[32];
+    char name[32];
     char regIP[]="193.136.138.142"; //IP of "Tejo"
     char regUDP[]="59000"; //port of "tejo"
     char id_to_connect[33]; //contact information of the node we want to connect to
     char bootid[3];  //id of the node we want to connect to
     char bootIP[16]; //IP of the node we want to connect to
     char bootTCP[6]; //TCP port of the node we want to connect to
-    char recv[46]; //string to send messages
-    char send[46]; //string to recieve messages
+    char recv[64]; //string to send messages
+    char send[64]; //string to recieve messages
     int i=0;
     int j=0;
     int k=0;
     char idaux[3];
+    int idauxint;
+    char dest[3];
+    char origin[3];
 
+    int tab_exp[100]; //matriz para a tabela de expedição
     int fd[100]; //array with sockets from nodes connected to our TCP server
-    for(i=0;i<100;i++){fd[i]=-1;} //every element to -1
+    for(i=0;i<100;i++){fd[i]=-1;tab_exp[i]=-1;} //Inicializar todos os elementos a -1
 
     struct sockaddr addr; 
     socklen_t addrlen;
     int fdTCP=serverTCP(TCP,addr,addrlen); //initiate TCP server
     int newfd;
+    int flagjoin=-1; //0 if join, 1 if djoin, -1 if nothing
+
+    struct name *name_head=NULL;
 
     //Select Variables
     fd_set inputs;
@@ -82,14 +92,16 @@ int main(int argc, char *argv[])
             if(FD_ISSET(0,&inputs)){
                 FD_CLR(0,&inputs);
                 fgets(user_input, 64, stdin);
-                sscanf(user_input,"%s %s %s",com,net,id);
-                if(strlen(net)!=3 || strlen(id)!=2){
-                    printf("Incorrect input!");
-                    exit(0);
-                }
-                sprintf(app.self,"%s %s %s",id,ip,TCP);
+                sscanf(user_input,"%s %s",com, com2);
 
                 if(strcmp(com,"join")==0){
+                    sscanf(user_input,"%s %s %s",com,net,id);
+                    if(strlen(net)!=3 || strlen(id)!=2){
+                        printf("Incorrect input!\n");
+                        exit(0);
+                    }
+                    sprintf(app.self,"%s %s %s",id,ip,TCP);
+                    flagjoin=0;
                     joinpt1(net,id,regIP,regUDP,id_to_connect);
                     sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
                     if(strcmp(id,bootid)==0){
@@ -103,12 +115,29 @@ int main(int argc, char *argv[])
                 }
 
                 if(strcmp(com,"leave")==0){
-                    leave(net,id,regIP,regUDP);
-                    exitapp(fd,&app);
+                    if(flagjoin==0){
+                        sscanf(app.self, "%s", id);
+                        leave(net,id,regIP,regUDP);
+                        exitapp(fd,&app);
+                    }
+                    if(flagjoin==1){exitapp(fd,&app);}
+                    if(flagjoin==-1){printf("Atenção, é necessário dar join ou djoin antes do leave!\n");}
+                    flagjoin=-1;
+                }
+
+                if(strcmp(com,"exit")==0){
+                    if(flagjoin!=-1){
+                        printf("Atenção,é necessário dar leave antes de sair!\n");
+                    }else{
+                        freelist(&name_head);
+                        exit(0);
+                    }
                 }
 
                 if(strcmp(com,"djoin")==0){
+                    flagjoin=1;
                     sscanf(user_input,"%s %s %s %s %s %s",com,net,id,bootid,bootIP,bootTCP);
+                    sprintf(app.self,"%s %s %s",id,ip,TCP);
                     sprintf(id_to_connect,"%s %s %s",bootid,bootIP,bootTCP);
                     if(strcmp(id,bootid)==0){
                         strcpy(app.ext,app.self);
@@ -117,6 +146,34 @@ int main(int argc, char *argv[])
                     else{
                         fd[atoi(bootid)]=djoin(&app,id_to_connect);
                     }
+                }
+                if(strcmp(com,"create")==0){
+                    add_node(&name_head,com2);
+                }
+                if(strcmp(com,"delete")==0){
+                    remove_node(&name_head,com2);
+                }
+                if(((strcmp(com,"show")==0) && (strcmp(com2,"names")==0)) || (strcmp(com,"sn")==0)){
+                    showlist(name_head);
+                }
+                if(((strcmp(com,"show")==0) && (strcmp(com2,"routing")==0)) || (strcmp(com,"sr")==0)){
+                    showtab(tab_exp);
+                }
+                if(((strcmp(com,"show")==0) && (strcmp(com2,"topology")==0)) || (strcmp(com,"st")==0)){
+                    printf("Vizinho Externo: %s\n",app.ext[0]!='\0' ? app.ext : "Não tem nó externo\n");
+                    printf("Vizinho de Backup: %s\n",app.bck[0]!='\0' ? app.bck : "Não tem nó de recuperação\n");
+                    if(app.num_ints!=0){
+                        printf("Vizinhos Internos:\n");
+                        for(i=0; i<app.num_ints; i++){
+                            printf("%s\n", app.intr[i]);
+                        }
+                    }else{printf("Não tem nós internos\n");}
+                }
+                if(strcmp(com,"get")==0){
+                    sscanf(user_input,"%s %s %s",com,dest,name);
+                    sscanf(app.self,"%s",idaux);
+                    sprintf(send, "QUERY %s %s %s\n", dest, idaux , name);
+                    forwaring(fd,tab_exp,send,-1);
                 }
             }
 
@@ -135,12 +192,9 @@ int main(int argc, char *argv[])
                 }
                 sprintf(send,"EXTERN %s",app.ext);
                 messageTCP(newfd,send);
-                printf("Numero de internos:%d\n",app.num_ints);
-                //printf("%s\n",recv);
                 sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
                 fd[atoi(bootid)]=newfd;
-                printf("Vizinho Externo: %s\n",app.ext);
-                printf("Nó de backup: %s\n",app.bck);
+                FD_CLR(fd[atoi(bootid)],&inputs);
                 FD_CLR(fdTCP,&inputs);
             }
 
@@ -150,9 +204,19 @@ int main(int argc, char *argv[])
             if(FD_ISSET(fd[i],&inputs)){
                 printf("Mensagem TCP recebida, do nó com id:%d\n",i);
                 responseTCP(fd[i],recv);
+                printf("Mensagem:%s\n",recv);
                 if(strcmp(recv,"LEAVE")==0){
                     close(fd[i]);
                     fd[i]=-1;
+                    //Tirar X da tabela de expedição como vizinho e como destino
+                    for (j = 0; j < 100; j++){if(tab_exp[j]==i){tab_exp[j]=-1;}}
+                    tab_exp[i]=-1;
+                    for (j = 0; j < 100; j++){
+                        if(fd[j]!=-1){
+                            sprintf(send,"WITHDRAW %d",i);
+                            messageTCP(fd[j],send);
+                        }
+                    }
                     //Ver se é externo
                     sscanf(app.ext,"%s",idaux);
                     if(atoi(idaux)==i){ //Mensagem de Vizinho externo
@@ -167,14 +231,17 @@ int main(int argc, char *argv[])
                                 sprintf(send,"EXTERN %s",app.ext);
                                 messageTCP(fd[j],send);
                             }}
+                            FD_CLR(fd[atoi(idaux)],&inputs);
                         }else{if(app.num_ints!=0){ //é ancora, escolhe novo ancora
                             strcpy(app.ext,app.intr[app.num_ints-1]);
-                            if(fd[j]!=-1){ //os que nao forem -1, nem o externo (internos)
+                            sscanf(app.ext,"%s",idaux); //Buscar id do novo externo
+                            for (j = 0; j < 100; j++){ //Percorrer array sockets
+                            if(fd[j]!=-1){ //os que nao forem -1
                                 sprintf(send,"EXTERN %s",app.ext);
                                 messageTCP(fd[j],send);
-                            }
+                            }}
                             app.num_ints--;
-                        }else{strcpy(app.ext,app.self);}
+                        }else{strcpy(app.ext,app.self);}//Ficou sozinho
                         }
                     }else{
                         printf("Vizinho interno desconentou-se!\n");
@@ -191,16 +258,48 @@ int main(int argc, char *argv[])
                 }
                 sscanf(recv,"%s",com);
                 if(strcmp(com,"EXTERN")==0){
-                    printf("Mensagem com novo backup\n");
                     sscanf(recv,"EXTERN %[^\n]",app.bck);
                     printf("Novo nó de backup: %s\n",app.bck);
                 }
-                if(strcmp(com,"NEW")==0){
-                    printf("Mensagem com novo Interno\n");
-                    sscanf(recv,"NEW %[^\n]",app.intr[app.num_ints]);
-                    app.num_ints++;
+                if(strcmp(com,"WITHDRAW")==0){
+                    sscanf(recv,"WITHDRAW %d",&idauxint);
+                    tab_exp[idauxint]=-1;
+                     for (j = 0; j < 100; j++){
+                        //Enviar a todos os vizinhos (menos a quem nos envou) mensagem de WITHDDRAW
+                        if(j!=i && fd[j]!=-1){
+                            sprintf(send,"WITHDRAW %d",idauxint);
+                            messageTCP(fd[j],send);
+                        }
+                    }
                 }
-            FD_CLR(fd[i],&inputs);               
+                if(strcmp(com,"QUERY")==0 || strcmp(com,"CONTENT")==0 || strcmp(com,"NOCONTENT")==0){
+                    sscanf(recv, "%*s %s %s %s", dest,origin,name);
+                    tab_exp[atoi(origin)]=i; //Atualizar tabela de expedição
+                    sscanf(app.self,"%s",idaux);
+                    if(strcmp(dest,idaux)==0){ //É o destino
+                    printf("Mensagem chegou ao destino!\n");
+                        if(strcmp(com,"QUERY")==0){
+                            //ver se tem, criar mensagem, forward
+                            if(search_node(&name_head,name)==1){
+                                //CONTENT
+                                sprintf(send, "CONTENT %s %s %s\n", origin, dest, name);
+                            }else{
+                                //NOCONTENT
+                                sprintf(send, "NOCONTENT %s %s %s\n", origin, dest, name);
+                            }
+                            forwaring(fd,tab_exp,send,i);
+                        }
+                        if(strcmp(com,"CONTENT")==0){
+                            printf("O conteudo pedido existe!\n");
+                        }
+                        if(strcmp(com,"NOCONTENT")==0){
+                            printf("O conteudo pedido não existe!\n");
+                        }
+                    }else{ //Não é o destino
+                        forwaring(fd,tab_exp,recv,i);
+                    }
+                }
+            FD_CLR(fd[i],&inputs);      
             }}}
 
         }
