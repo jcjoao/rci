@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     for(i=0;i<100;i++){fd[i]=-1;tab_exp[i]=-1;} //Inicializar todos os elementos a -1
 
     struct sockaddr addr; 
-    socklen_t addrlen;
+    socklen_t addrlen = 0;
     int fdTCP=serverTCP(TCP,addr,addrlen); //initiate TCP server
     int newfd;
     int flagjoin=-1; //0 if join, 1 if djoin, -1 if nothing
@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
     //struct timeval timeout;
     while(1)
     {
+        printf("\n-------------\n");
         //Inicializar variaveis do select
         FD_ZERO(&inputs);
         FD_SET(0,&inputs);
@@ -175,6 +176,10 @@ int main(int argc, char *argv[])
                     sprintf(send, "QUERY %s %s %s\n", dest, idaux , name);
                     forwaring(fd,tab_exp,send,-1);
                 }
+                if(((strcmp(com,"clear")==0) && (strcmp(com2,"routing")==0)) || (strcmp(com,"cr")==0)){
+                    for(i=0;i<100;i++){tab_exp[i]=-1;}
+                    printf("Tabela de Expedição Limpa!\n");
+                }
             }
 
             //Receber Novos Pedidos de Conexao
@@ -237,7 +242,7 @@ int main(int argc, char *argv[])
                             sscanf(app.ext,"%s",idaux); //Buscar id do novo externo
                             for (j = 0; j < 100; j++){ //Percorrer array sockets
                             if(fd[j]!=-1){ //os que nao forem -1
-                                sprintf(send,"EXTERN %s",app.ext);
+                                sprintf(send,"EXTERN %s\n",app.ext);
                                 messageTCP(fd[j],send);
                             }}
                             app.num_ints--;

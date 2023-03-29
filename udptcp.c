@@ -103,7 +103,7 @@ int messageTCP(int fd, char* send){
 
 int responseTCP(int fd,char* recv){
     int socket_state;
-    memset(recv, 0, sizeof(recv));
+    memset(recv, 0, 128);
     socket_state = read(fd, recv, 128);
     if (socket_state == -1) {exit(1);}
     if(socket_state == 0){

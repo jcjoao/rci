@@ -141,9 +141,9 @@ void showlist(name *list_head){
 //Função para dar print na tabela de expedição
 void showtab(int *tab_exp){
 
-    int aux=0, i=0;
+    int aux=0, i;
 
-    for (int i = 0; i < 100; i++) {
+    for (i = 0; i < 100; i++) {
 
         if(tab_exp[i]!=-1){
             if(aux==0){

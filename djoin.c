@@ -31,7 +31,7 @@ int djoin(node *app, char* id_to_connect){
     strcpy(app->ext,id_to_connect);
     fd_client = clientTCP(bootIP, bootTCP);
     //Send welcome message with contact
-    sprintf(send,"NEW %s",app->self);
+    sprintf(send,"NEW %s\n",app->self);
     messageTCP(fd_client,send);
     responseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
@@ -39,7 +39,7 @@ int djoin(node *app, char* id_to_connect){
     return fd_client;
 }
 
-int exitapp(int *fd,node *app){
+void exitapp(int *fd,node *app){
     int i;
     for (i = 0; i < 100; i++) {
         if(fd[i]!=-1){
@@ -50,4 +50,5 @@ int exitapp(int *fd,node *app){
     app->num_ints=0;
     strcpy(app->bck, app->self);
     strcpy(app->ext, app->self);
+    return;
 }

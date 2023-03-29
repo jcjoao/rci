@@ -1,7 +1,7 @@
 PROJECT_NAME = cot #target file name
 
 CC = gcc #compiler
-#CFLAGS = -Wall -std=c11 -g #-O3
+CFLAGS = -Wall
 
 OBJECTS = main.o udptcp.o join.o djoin.o names.o #objects
 

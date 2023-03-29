@@ -28,7 +28,7 @@ int joinpt1(char* net,char* id,char* regIP,char* regUDP, char* id_to_connect){
         while(aux==1){
             aux=verify_id(id,list);
             if(aux==1){
-            snprintf(id, sizeof(id), "%02d", rand() % 100);
+            snprintf(id, 3, "%02d", rand() % 100);
             }
         }
     choose_id(id,list,id_to_connect);

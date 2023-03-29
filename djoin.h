@@ -4,6 +4,6 @@
 #include "struct.h"
 
 int djoin(node *app, char* id_to_connect);
-int exitapp(int *fd,node *app);
+void exitapp(int *fd,node *app);
 
 #endif
