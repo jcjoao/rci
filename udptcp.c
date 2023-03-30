@@ -61,8 +61,12 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
         printf("UDP Failed!");
         exit(1);}
 
+
+    char buf[150];
+    strncpy(buf, send, sizeof(buf));
+
     //Enviar Mensagem
-    n=sendto(fd,send,150,0,res->ai_addr,res->ai_addrlen);
+    n=sendto(fd,buf,150,0,res->ai_addr,res->ai_addrlen);
     if(n==-1)/*error*/exit(1);
     
     //Receber resposta
@@ -92,6 +96,8 @@ int clientTCP(char* bootIP, char* bootTCP){
     if(n!=0){printf("Error with getaddrinfo\n");exit(1);}
     n=connect(fd,res->ai_addr,res->ai_addrlen);
     if(n==-1){printf("Error with Connect\n");exit(1);}
+
+    freeaddrinfo(res);
 
     return fd;
 }

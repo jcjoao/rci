@@ -33,7 +33,7 @@ int djoin(node *app, char* id_to_connect){
     //Send welcome message with contact
     sprintf(send,"NEW %s\n",app->self);
     messageTCP(fd_client,send);
-    responseTCP(fd_client,recv);
+    newresponseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
     printf("\x1b[32m[Info]\x1b[0m Mensagem recebida: %s\n",recv);
     printf("\x1b[32m[Info]\x1b[0m Novo Nó de backup: %s\n", app->bck);
@@ -44,7 +44,9 @@ void exitapp(int *fd,node *app){
     int i;
     for (i = 0; i < 100; i++) {
         if(fd[i]!=-1){
-            close(fd[i]);
+            if(close(fd[i])==-1){
+                printf("\x1b[31m[Error]\x1b[0m Não foi possivel fechar o socket\n");
+            }
             fd[i]=-1;
         }
     }

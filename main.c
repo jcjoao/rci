@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
                     checkinput=1;
                     if(flagjoin==-1){
                     sscanf(user_input,"%s %s %s",com,net,id);
-                    if(strlen(net)!=3 || strlen(id)!=2){
+                    if(strlen(net)!=3 || strlen(id)!=2 || all_digits(id)==0 || all_digits(net)==0){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
                         flagjoin=0;
@@ -138,12 +138,19 @@ int main(int argc, char *argv[])
 
                 if(strcmp(com,"leave")==0){
                     checkinput=1;
+                    //Caso Tivesse sido feito join
                     if(flagjoin==0){
                         sscanf(app.self, "%s", id);
                         leave(net,id,regIP,regUDP);
                         exitapp(fd,&app);
+                        printf("\x1b[32m[Info]\x1b[0m Nó saiu da rede com sucesso!\n");
                     }
-                    if(flagjoin==1){exitapp(fd,&app);}
+                    //Caso Tivesse sido feito djoin
+                    if(flagjoin==1){
+                        exitapp(fd,&app);
+                        printf("\x1b[32m[Info]\x1b[0m Nó saiu da rede com sucesso!\n");
+                    }
+                    //Caso NAO Tivesse sido feito nem join nem djoin
                     if(flagjoin==-1){printf("\x1b[33m[Warning]\x1b[0m É necessário dar join ou djoin antes do leave!\n");}
                     flagjoin=-1;
                 }
@@ -153,7 +160,11 @@ int main(int argc, char *argv[])
                     if(flagjoin!=-1){
                         printf("\x1b[33m[Warning]\x1b[0m É necessário dar leave antes de sair!\n");
                     }else{
+                        printf("\x1b[32m[Info]\x1b[0m Até à Próxima :) \n");
                         freelist(&name_head);
+                        if(close(fdTCP)==-1){
+                            printf("\x1b[31m[Error]\x1b[0m Não foi possivel fechar o socket");
+                        }
                         exit(0);
                     }
                 }
@@ -183,10 +194,12 @@ int main(int argc, char *argv[])
                 if(strcmp(com,"create")==0){
                     checkinput=1;
                     add_node(&name_head,com2);
+                    printf("\x1b[32m[Info]\x1b[0m Conteudo criado!\n");
                 }
                 if(strcmp(com,"delete")==0){
                     checkinput=1;
                     remove_node(&name_head,com2);
+                    printf("\x1b[32m[Info]\x1b[0m Conteudo Eliminado!\n");
                 }
                 if(((strcmp(com,"show")==0) && (strcmp(com2,"names")==0)) || (strcmp(com,"sn")==0)){
                     checkinput=1;
@@ -213,6 +226,7 @@ int main(int argc, char *argv[])
                     if(strlen(dest)!=2){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
+                         printf("\x1b[32m[Info]\x1b[0m Procurando o Conteudo Pedido...\n");
                         sscanf(app.self,"%s",idaux);
                         sprintf(send, "QUERY %s %s %s\n", dest, idaux , name);
                         forwaring(fd,tab_exp,send,-1);
@@ -226,7 +240,6 @@ int main(int argc, char *argv[])
                 if(strcmp(com,"help")==0){
                     checkinput=1;
 	                helpp(); 
-                    printf("help\n");
                 }
                 if(checkinput==0){
                     printf("\x1b[33m[Warning]\x1b[0m Input invalido, porfavor introduzir um dos comandos!\n");
@@ -237,13 +250,13 @@ int main(int argc, char *argv[])
             if(FD_ISSET(fdTCP,&inputs)){
                 printf("\x1b[32m[Info]\x1b[0m Novo Pedido Conexão\n");
                 newfd = connectTCP(addr,addrlen,fdTCP);
-                responseTCP(newfd,recv);
+                newresponseTCP(newfd,recv);
                 printf("\x1b[32m[Info]\x1b[0m Mensagem Recebida: %s",recv);
                 sscanf(recv,"NEW %[^\n]",id_to_connect);
                 //Nó estava sozinho
                 if(strcmp(app.self,app.ext)==0){
-                    printf("\x1b[32m[Info]\x1b[0m Novo Vizinho Externo: %s\n",app.ext);
                     strcpy(app.ext,id_to_connect);
+                    printf("\x1b[32m[Info]\x1b[0m Novo Vizinho Externo: %s\n",app.ext);
                 }else{
                     strcpy(app.intr[app.num_ints],id_to_connect);
                     printf("\x1b[32m[Info]\x1b[0m Novo Vizinho Interno: %s\n",app.intr[app.num_ints]);
@@ -352,6 +365,7 @@ int main(int argc, char *argv[])
                         if(strcmp(dest,idaux)==0){ //É o destino
                         //printf("Mensagem chegou ao destino!\n");
                             if(strcmp(com,"QUERY")==0){
+                                printf("\x1b[32m[Info]\x1b[0m Foi pedido o conteudo: %s\n", name);
                                 //ver se tem, criar mensagem, forward
                                 if(search_node(&name_head,name)==1){
                                     //CONTENT
@@ -388,7 +402,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    close(fdTCP);
     return 0;
 }
 
