@@ -7,5 +7,6 @@ int clientTCP(char* bootIP, char* bootTCP);
 int messageTCP(int fd, char* send);
 int responseTCP(int fd,char* recv);
 int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP);
+int newresponseTCP(int fd,char* recv);
 
 #endif

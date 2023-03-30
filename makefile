@@ -3,7 +3,7 @@ PROJECT_NAME = cot #target file name
 CC = gcc #compiler
 CFLAGS = -Wall
 
-OBJECTS = main.o udptcp.o join.o djoin.o names.o #objects
+OBJECTS = main.o udptcp.o join.o djoin.o names.o menu.o #objects
 
 all: $(PROJECT_NAME)
 
@@ -15,6 +15,7 @@ udptcp.o: udptcp.c udptcp.h
 join.o: join.c join.h
 djoin.o: djoin.c djoin.h
 names.o: names.c names.h
+menu.o: menu.c menu.h
 
 clean:
 	rm -f $(PROJECT_NAME) *.o

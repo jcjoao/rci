@@ -23,8 +23,8 @@ int djoin(node *app, char* id_to_connect){
     char bootid[3];  //id of the node we want to connect to
     char bootIP[16]; //IP of the node we want to connect to
     char bootTCP[6]; //TCP port of the node we want to connect to
-    char recv[64]; //string to send messages
-    char send[64]; //string to recieve messages
+    char recv[150]; //string to send messages
+    char send[150]; //string to recieve messages
 
     sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
 
@@ -35,7 +35,8 @@ int djoin(node *app, char* id_to_connect){
     messageTCP(fd_client,send);
     responseTCP(fd_client,recv);
     sscanf(recv,"EXTERN %[^\n]",app->bck); //Read recieved message
-    printf("Mensagem recebida: %s\n",recv);
+    printf("\x1b[32m[Info]\x1b[0m Mensagem recebida: %s\n",recv);
+    printf("\x1b[32m[Info]\x1b[0m Novo Nó de backup: %s\n", app->bck);
     return fd_client;
 }
 

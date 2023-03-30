@@ -56,22 +56,22 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     hints.ai_family=AF_INET;//IPv4
     hints.ai_socktype=SOCK_DGRAM;//UDP socket
 
-    errcode=getaddrinfo("tejo.tecnico.ulisboa.pt",regUDP,&hints,&res);
+    errcode=getaddrinfo(regIP,regUDP,&hints,&res);
     if(errcode!=0){
         printf("UDP Failed!");
         exit(1);}
 
     //Enviar Mensagem
-    n=sendto(fd,send,128,0,res->ai_addr,res->ai_addrlen);
+    n=sendto(fd,send,150,0,res->ai_addr,res->ai_addrlen);
     if(n==-1)/*error*/exit(1);
     
     //Receber resposta
     addrlen=sizeof(addr);
-    n=recvfrom(fd,recv,128,0,&addr,&addrlen);
+    n=recvfrom(fd,recv,150,0,&addr,&addrlen);
     if(n==-1)/*error*/exit(1);
 
     recv[n] = '\0';
-    printf("echo: %s\n", recv);
+    //printf(": %s\n", recv);
 
 
     freeaddrinfo(res);
@@ -97,26 +97,77 @@ int clientTCP(char* bootIP, char* bootTCP){
 }
 
 int messageTCP(int fd, char* send){
-    if (write(fd, send, 128) == -1) {exit(1);}
+    ssize_t nbytes,nleft,nwritten;
+    char *ptr;
+    ptr=send;
+    nbytes = strlen(send);
+    nleft = nbytes;
+    while (nleft > 0) {
+    nwritten = write(fd, ptr, nleft);
+    if (nwritten <= 0) {exit(1);}
+    nleft -= nwritten;
+    ptr += nwritten;
+    }
+    //if (write(fd, send, 128) == -1) {exit(1);}
     return 0;
 }
 
 int responseTCP(int fd,char* recv){
     int socket_state;
-    memset(recv, 0, 128);
-    socket_state = read(fd, recv, 128);
+    memset(recv, 0, 150);
+    socket_state = read(fd, recv, 150);
     if (socket_state == -1) {exit(1);}
     if(socket_state == 0){
-        strcpy(recv,"LEAVE");
+        strcpy(recv,"LEAVE\n");
     }
+    
 
+    return 0;
+}
+
+int newresponseTCP(int fd,char* recv){
+    char c;
+    int bytes_read = 0;
+    int aux;
+    memset(recv, 0, 150);
+    while ( (aux=read(fd, &c, 1)) == 1) {
+        if (c == '\n') {
+            recv[bytes_read] = '\n';
+            return bytes_read;
+        } else {
+            recv[bytes_read] = c;
+            bytes_read++;
+            if (bytes_read >= 150) {
+                fprintf(stderr, "\x1b[31m[Error]\x1b[0m Mensagem Incorreta!\n");
+                return -1;
+            }
+        }
+    }
+    if (aux < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            printf("\x1b[31m[Error]\x1b[0m Socket read timeout!\n");
+            return -1;
+        } else {
+            perror("\x1b[31m[Error]\x1b[0m Read Error\n");
+        }
+    }
+    if(bytes_read==0){
+        strcpy(recv,"LEAVE\n");
+    }
     return 0;
 }
 
 int connectTCP(struct sockaddr addr,socklen_t addrlen,int fdTCP){
     int newfd;
 
+    struct timeval timeout;
+    timeout.tv_sec = 2; // 5 seconds
+    timeout.tv_usec = 0;
+
     addrlen=sizeof(addr);
     if((newfd=accept(fdTCP,&addr,&addrlen))==-1)exit(1);
+    if (setsockopt(newfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+        printf("\x1b[31m[Error]\x1b[0m Error with setsockopt\n");
+    }
     return newfd;
 }
