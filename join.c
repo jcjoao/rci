@@ -23,22 +23,25 @@ int joinpt1(char* net,char* id,char* regIP,char* regUDP, char* id_to_connect){
     sprintf(send,"NODES %s",net);
     //Receber lista de Nos
     clientUDP(regIP,regUDP, send, list);
-
-    //Verificar se ja ha um id
-    int aux=1;
-        while(aux==1){
-            aux=verify_id(id,list);
-            if(aux==1){
-                ifrandom=1;
-                snprintf(id, 3, "%02d", rand() % 100);
+    if(strcmp(list,"TIMEOUT")!=0){
+        //Verificar se ja ha um id
+        int aux=1;
+            while(aux==1){
+                aux=verify_id(id,list);
+                if(aux==1){
+                    ifrandom=1;
+                    snprintf(id, 3, "%02d", rand() % 100);
+                }
             }
+        if(ifrandom==1){
+            printf("\x1b[32m[Info]\x1b[0m Já existe um nó com esse id na rede!\n");
+            printf("\x1b[32m[Info]\x1b[0m Seu novo id: %s\n", id);
         }
-    if(ifrandom==1){
-        printf("\x1b[32m[Info]\x1b[0m Já existe um nó com esse id na rede!\n");
-        printf("\x1b[32m[Info]\x1b[0m Seu novo id: %s\n", id);
-    }
-    choose_id(id,list,id_to_connect);
+        choose_id(id,list,id_to_connect);
+        return 1;
+    }else{
     return 0;
+    }
 }
 int joinpt2(char* net,char* id,char* regIP,char* regUDP, char* ip,char* TCP){
     char recv[150];
@@ -63,21 +66,23 @@ int leave(char* net,char* id,char* regIP,char* regUDP){
     //Receber lista de Nos
     sprintf(send,"NODES %s",net);
     clientUDP(regIP,regUDP, send, list);
+    if(strcmp(list,"TIMEOUT")!=0){
 
-    int aux=verify_id(id,list);
-    if(aux==0){
-        printf("\x1b[31m[Error]\x1b[0m No Node found");
-        exit(0);
+        int aux=verify_id(id,list);
+        if(aux==0){
+            printf("\x1b[31m[Error]\x1b[0m Nenhum nó com esse id encontrado!");
+            return 0;
+        }
+        sprintf(send,"UNREG %s %s\n",net,id);
+        //printf("%s\n",send);
+        clientUDP(regIP,regUDP,send, recv);
+        if(strcmp(recv,"OKUNREG")==0){
+            printf("\x1b[32m[Info]\x1b[0m Nó saiu do Servidor de Nós com Sucesso!\n");
+        }else{
+            printf("\x1b[31m[Error]\x1b[0m Erro ao sair do Servidor de Nós!\n");
+        }
+        return 1;
     }
-    sprintf(send,"UNREG %s %s\n",net,id);
-    //printf("%s\n",send);
-    clientUDP(regIP,regUDP,send, recv);
-    if(strcmp(recv,"OKUNREG")==0){
-        printf("\x1b[32m[Info]\x1b[0m Nó saiu do Servidor de Nós com Sucesso!\n");
-    }else{
-        printf("\x1b[31m[Error]\x1b[0m Erro ao sair do Servidor de Nós!\n");
-    }
-
     return 0;
 }
 

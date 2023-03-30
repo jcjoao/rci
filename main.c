@@ -26,14 +26,33 @@ int main(int argc, char *argv[])
     node app;
     app.num_ints=0;
 
-    //menu();
-
-    if (argc != 3) {
-        printf("\x1b[31m[Error]\x1b[0m Argumentos Inválidos\n");
-        exit(1);
+    char regIP[16];
+    char regUDP[16];
+    if(argc==5){ //caso seja dado regIP e regUDP na invocação do programa registar
+        strcpy(regIP,argv[3]);
+        strcpy(regUDP,argv[4]);
+        if(strlen(argv[3])>15 || strlen(argv[3])<9){
+            printf("\x1b[31m[Error]\x1b[0m Número do ip para UDP Inválido!\n");
+            exit(0);
+        }
+        if (atoi(regUDP) < 1024 || atoi(regUDP) > 65535) {
+        printf("\x1b[31m[Error]\x1b[0m Número de porto UDP Inválido!\n");
+        exit(0);
+        }
+    }else{
+        if (argc==3) { //caso contrario, colocar os valores default
+            strcpy(regIP,"193.136.138.142"); //IP of "Tejo"
+            strcpy(regUDP,"59000"); //port of "tejo"
+        }else{
+            printf("\x1b[31m[Error]\x1b[0m Argumentos Inválidos\n");
+            exit(0);
+        }
     }
+
+    menu();
     char *ip = argv[1]; //our ip
     char *TCP = argv[2]; //our port that is going to be used on the TCP server
+
 
     if (atoi(TCP) < 1024 || atoi(TCP) > 65535) {
         printf("\x1b[31m[Error]\x1b[0m Número de porto Inválido!\n");
@@ -46,8 +65,6 @@ int main(int argc, char *argv[])
     char com[12];
     char com2[100];
     char name[100];
-    char regIP[]="193.136.138.142"; //IP of "Tejo"
-    char regUDP[]="59000"; //port of "tejo"
     char id_to_connect[33]; //contact information of the node we want to connect to
     char bootid[3];  //id of the node we want to connect to
     char bootIP[16]; //IP of the node we want to connect to
@@ -118,18 +135,19 @@ int main(int argc, char *argv[])
                     if(strlen(net)!=3 || strlen(id)!=2 || all_digits(id)==0 || all_digits(net)==0){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
-                        flagjoin=0;
-                        joinpt1(net,id,regIP,regUDP,id_to_connect);
-                        sprintf(app.self,"%s %s %s",id,ip,TCP);
-                        sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
-                        if(strcmp(id,bootid)==0){
-                            strcpy(app.ext,app.self);
-                            strcpy(app.bck,app.self);                      
+                        if(joinpt1(net,id,regIP,regUDP,id_to_connect)==1){
+                            flagjoin=0;
+                            sprintf(app.self,"%s %s %s",id,ip,TCP);
+                            sscanf(id_to_connect,"%s %s %s\n",bootid,bootIP,bootTCP);
+                            if(strcmp(id,bootid)==0){
+                                strcpy(app.ext,app.self);
+                                strcpy(app.bck,app.self);                      
+                            }
+                            else{
+                                fd[atoi(bootid)]=djoin(&app,id_to_connect);
+                            }
+                            joinpt2(net,id,regIP,regUDP,ip,TCP);
                         }
-                        else{
-                            fd[atoi(bootid)]=djoin(&app,id_to_connect);
-                        }
-                        joinpt2(net,id,regIP,regUDP,ip,TCP);
                     }
                     }else{
                         printf("\x1b[33m[Warning]\x1b[0m Fazer leave antes de dar join outra vez!\n");
@@ -138,21 +156,23 @@ int main(int argc, char *argv[])
 
                 if(strcmp(com,"leave")==0){
                     checkinput=1;
+                    //Caso NAO Tivesse sido feito nem join nem djoin
+                    if(flagjoin==-1){printf("\x1b[33m[Warning]\x1b[0m É necessário dar join ou djoin antes do leave!\n");}
                     //Caso Tivesse sido feito join
                     if(flagjoin==0){
                         sscanf(app.self, "%s", id);
-                        leave(net,id,regIP,regUDP);
+                        if(leave(net,id,regIP,regUDP)==1){;
                         exitapp(fd,&app);
                         printf("\x1b[32m[Info]\x1b[0m Nó saiu da rede com sucesso!\n");
+                        flagjoin=-1;
+                        }
                     }
                     //Caso Tivesse sido feito djoin
                     if(flagjoin==1){
                         exitapp(fd,&app);
                         printf("\x1b[32m[Info]\x1b[0m Nó saiu da rede com sucesso!\n");
+                        flagjoin=-1;
                     }
-                    //Caso NAO Tivesse sido feito nem join nem djoin
-                    if(flagjoin==-1){printf("\x1b[33m[Warning]\x1b[0m É necessário dar join ou djoin antes do leave!\n");}
-                    flagjoin=-1;
                 }
 
                 if(strcmp(com,"exit")==0){
@@ -160,7 +180,7 @@ int main(int argc, char *argv[])
                     if(flagjoin!=-1){
                         printf("\x1b[33m[Warning]\x1b[0m É necessário dar leave antes de sair!\n");
                     }else{
-                        printf("\x1b[32m[Info]\x1b[0m Até à Próxima :) \n");
+                        printf("\x1b[35m[Exit]\x1b[0m Até à Próxima :) \n");
                         freelist(&name_head);
                         if(close(fdTCP)==-1){
                             printf("\x1b[31m[Error]\x1b[0m Não foi possivel fechar o socket");
@@ -173,13 +193,14 @@ int main(int argc, char *argv[])
                     checkinput=1;
                     if(flagjoin==-1){
                     sscanf(user_input,"%s %s %s %s %s %s",com,net,id,bootid,bootIP,bootTCP);
-                    if(strlen(net)!=3 || strlen(id)!=2 || strlen(bootid)!=2 || atoi(bootTCP) < 1024 || atoi(bootTCP) > 65535){
+                    if(strlen(net)!=3 || strlen(id)!=2 || strlen(bootid)!=2 || atoi(bootTCP) < 1024 || atoi(bootTCP) > 65535 ||strlen(bootIP)>15 || strlen(bootIP)<9){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
                         flagjoin=1;
                         sprintf(app.self,"%s %s %s",id,ip,TCP);
                         sprintf(id_to_connect,"%s %s %s",bootid,bootIP,bootTCP);
                         if(strcmp(id,bootid)==0){
+                            printf("\x1b[32m[Info]\x1b[0m Nó sozinho na rede, backup e externo são ele próprio!");
                             strcpy(app.ext,app.self);
                             strcpy(app.bck,app.self);                      
                         }
@@ -194,12 +215,12 @@ int main(int argc, char *argv[])
                 if(strcmp(com,"create")==0){
                     checkinput=1;
                     add_node(&name_head,com2);
-                    printf("\x1b[32m[Info]\x1b[0m Conteudo criado!\n");
                 }
                 if(strcmp(com,"delete")==0){
                     checkinput=1;
-                    remove_node(&name_head,com2);
+                    if(remove_node(&name_head,com2)==1){
                     printf("\x1b[32m[Info]\x1b[0m Conteudo Eliminado!\n");
+                    }
                 }
                 if(((strcmp(com,"show")==0) && (strcmp(com2,"names")==0)) || (strcmp(com,"sn")==0)){
                     checkinput=1;
@@ -223,7 +244,7 @@ int main(int argc, char *argv[])
                 if(strcmp(com,"get")==0){
                     checkinput=1;
                     sscanf(user_input,"%s %s %s",com,dest,name);
-                    if(strlen(dest)!=2){
+                    if(strlen(dest)!=2 || all_digits(dest)==0){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
                          printf("\x1b[32m[Info]\x1b[0m Procurando o Conteudo Pedido...\n");

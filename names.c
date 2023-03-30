@@ -24,7 +24,7 @@ name *create_node(char *name_str) {
 
     //Verificação da correta alocação de memória
     if (new_node == NULL) {
-        printf("Erro ao alocar memória.\n");
+        printf("\x1b[31m[Error]\x1b[0m Erro ao alocar memória.\n");
         exit(1);
     }
 
@@ -43,25 +43,25 @@ void add_node(name **list_head, char *name_str) {
     if (*list_head == NULL) {
 
         *list_head = create_node(name_str);
-
+        printf("\x1b[32m[Info]\x1b[0m Conteudo criado!\n");
         return;
     }
 
     while (aux->next != NULL) {
         if(strcmp(aux->name,name_str)==0){
-            printf("O nome já se encontra adicionado.\n");
+            printf("\x1b[33m[Warning]\x1b[0m O nome já se encontra adicionado.\n");
             return;
         }
         aux = aux->next;
     }
 
     if(strcmp(aux->name,name_str)==0){
-        printf("O nome já se encontra adicionado.\n");
+        printf("\x1b[33m[Warning]\x1b[0m O nome já se encontra adicionado.\n");
         return;
     }
 
     aux->next = create_node(name_str);
-
+    printf("\x1b[32m[Info]\x1b[0m Conteudo criado!\n");
     return;
 }
 
@@ -72,7 +72,7 @@ int remove_node(name **list_head, char *name_str) {
     struct name *prev = *list_head, *aux = NULL;
                 
     if (*list_head == NULL) {
-        printf("O nome não está presente no nó.\n");
+        printf("\x1b[33m[Warning]\x1b[0m O nome não está presente no nó.\n");
         return 0;
     }
 
@@ -95,7 +95,7 @@ int remove_node(name **list_head, char *name_str) {
         aux = aux->next;
     }
 
-    printf("O nome não está presente no nó.\n");
+    printf("\x1b[33m[Warning]\x1b[0m O nome não está presente no nó.\n");
     return 0;
 }
 
@@ -122,11 +122,11 @@ void showlist(name *list_head){
     struct name *aux = list_head;
 
     if(aux==NULL){
-        printf("Não existe qualquer conteúdo adicionado a este nó.\n"); 
+        printf("\x1b[32m[Info]\x1b[0m Não existe qualquer conteúdo adicionado a este nó.\n"); 
         return;
     }
 
-    printf("Tem-se neste nó os seguintes conteúdos:\n");   
+    printf("\x1b[32m[Info]\x1b[0m Tem-se neste nó os seguintes conteúdos:\n");   
 
     while(aux != NULL){
 
@@ -147,14 +147,14 @@ void showtab(int *tab_exp){
 
         if(tab_exp[i]!=-1){
             if(aux==0){
-                printf("Tabela de expedição:\n");
+                printf("\x1b[32m[Info]\x1b[0m Tabela de expedição:\n");
             }
-            printf("Destino: %d, Próximo nó: %d\n", i, tab_exp[i]);
+            printf("\x1b[32m[Info]\x1b[0m Destino: %d, Próximo nó: %d\n", i, tab_exp[i]);
             aux=1;
         }
     }
 
-    if(aux==0){printf("A tabela de expedição do nó encontra-se vazia.\n");}
+    if(aux==0){printf("\x1b[32m[Info]\x1b[0m A tabela de expedição do nó encontra-se vazia.\n");}
 
     return;
 }

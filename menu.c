@@ -20,26 +20,26 @@ void menu(){
 
     printf("\n");
     printf("|--------------------------------------------------------------------------------------|\n");
-    printf("|---------------------\033[32mTransferência de Conteúdos em Redes Arbóreas\033[0m---------------------|\n");
-    printf("|-------------------------------------\033[32mMENU INICIAL\033[0m-------------------------------------|\n");
+    printf("|---------------------\033[35mTransferência de Conteúdos em Redes Arbóreas\033[0m---------------------|\n");
+    printf("|-------------------------------------\033[35mMENU INICIAL\033[0m-------------------------------------|\n");
     printf("|--------------------------------------------------------------------------------------|\n\n");
-    printf("\033[34mFuncionalidade do programa:\n");
+    printf("\033[35mFuncionalidade do programa:\n");
     printf("\033[0mAplicação para criação de um nó, pertencente a uma rede de nós no formato de uma árvore,\n");
     printf("interligados com sessões TCP, e com ligação por UDP a uma base de dados, para cosulta.\n\n");
-    printf("\033[34mOpções de comandos:\n");
+    printf("\033[35mOpções de comandos:\n");
     printf("· \033[0mjoin net id\n");
-    printf("\033[34m· \033[0mdjoin net id bootid bootIP bootTCP\n");
-    printf("\033[34m· \033[0mcreate name\n");
-    printf("\033[34m· \033[0mdelete name\n");
-    printf("\033[34m· \033[0mget dest name\n"); 
-    printf("\033[34m· \033[0mshow topology (st)\n");
-    printf("\033[34m· \033[0mshow names (sn)\n");
-    printf("\033[34m· \033[0mshow routing (sr)\n");
-    printf("\033[34m· \033[0mclear routing (cr)\n");
-    printf("\033[34m· \033[0mleave\n");
-    printf("\033[34m· \033[0mexit\n");
-    printf("\033[34m· \033[0mhelp\n\n");
-    printf("Para mais informações, consultar a opção \033[34mhelp\033[0m.\n\n");
+    printf("\033[35m· \033[0mdjoin net id bootid bootIP bootTCP\n");
+    printf("\033[35m· \033[0mcreate name\n");
+    printf("\033[35m· \033[0mdelete name\n");
+    printf("\033[35m· \033[0mget dest name\n"); 
+    printf("\033[35m· \033[0mshow topology (st)\n");
+    printf("\033[35m· \033[0mshow names (sn)\n");
+    printf("\033[35m· \033[0mshow routing (sr)\n");
+    printf("\033[35m· \033[0mclear routing (cr)\n");
+    printf("\033[35m· \033[0mleave\n");
+    printf("\033[35m· \033[0mexit\n");
+    printf("\033[35m· \033[0mhelp\n\n");
+    printf("Para mais informações, consultar a opção \033[35mhelp\033[0m.\n");
 
     return;
 }
@@ -49,7 +49,7 @@ void helpp(){
 
     printf("\n\n");
     printf("|--------------------------------------------------------------------------------------|\n");
-    printf("|-----------------------------------------\033[31mHELP\033[0m-----------------------------------------|\n");
+    printf("|-----------------------------------------\033[34mHELP\033[0m-----------------------------------------|\n");
     printf("|--------------------------------------------------------------------------------------|\n\n");
     printf("\033[34mOpções de comandos:\n\n");
     
@@ -92,6 +92,10 @@ void helpp(){
     //Opção show routing (sr)  
     printf("\033[34m· \033[0mshow routing (sr):\n");
     printf("Mostra a tabela de expedição do nó.\n\n");
+
+    //Opção clear routing (cr)  
+    printf("\033[34m· \033[0mclear routing (cr):\n");
+    printf("Limpa Tabela de Expedição.\n\n");
    
     //Opção leave 
     printf("\033[34m· \033[0mleave:\n");
@@ -103,7 +107,7 @@ void helpp(){
    
     //Opção help 
     printf("\033[34m· \033[0mhelp:\n");
-    printf("Mostra mais detalhadamente todas as opções de comandos de entrada do programa.\n\n");
+    printf("Mostra mais detalhadamente todas as opções de comandos de entrada do programa.\n");
 
     return;
 }

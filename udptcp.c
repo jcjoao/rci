@@ -49,8 +49,16 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     socklen_t addrlen;
     ssize_t n;
 
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd==-1)/*error*/exit(1);
+
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0){
+        printf("\x1b[31m[Error]\x1b[0m Error with setsockopt\n");
+    }
 
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;//IPv4
@@ -72,9 +80,20 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     //Receber resposta
     addrlen=sizeof(addr);
     n=recvfrom(fd,recv,150,0,&addr,&addrlen);
-    if(n==-1)/*error*/exit(1);
+    if (n < 0) {
+        if (errno == EWOULDBLOCK) {
+            printf("\x1b[31m[Error]\x1b[0m Socket read timeout!\n");
+            strcpy(recv,"TIMEOUT");
+        }
+        else{
+            printf("\x1b[31m[Error]\x1b[0m Error with recvfrom!\n");
+            exit(1);
+        }
+    }else{
+        recv[n] = '\0';
+    }
 
-    recv[n] = '\0';
+    //recv[n] = '\0';
     //printf(": %s\n", recv);
 
 
