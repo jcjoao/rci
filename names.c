@@ -184,6 +184,7 @@ int search_node(name **list_head, char *name_str){
 void forwaring(int *fd, int *tab_exp, char* msg, int before){
     int j;
     int dest;
+    //Dá scan do destino
     sscanf(msg, "%*s %d %*d %*s", &dest);
 
     if(tab_exp[dest]!=-1 && fd[tab_exp[dest]]!=-1){ //Ver se tem na tabela de expedição o destino

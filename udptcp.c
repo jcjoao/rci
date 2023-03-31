@@ -56,6 +56,7 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
     if(fd==-1)/*error*/exit(1);
 
+    //Colocar timeout no socket
     if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0){
         printf("\x1b[31m[Error]\x1b[0m Error with setsockopt\n");
     }
@@ -79,6 +80,7 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
     
     //Receber resposta
     addrlen=sizeof(addr);
+    memset(recv, 0, 150);
     n=recvfrom(fd,recv,150,0,&addr,&addrlen);
     if (n < 0) {
         if (errno == EWOULDBLOCK) {
@@ -138,30 +140,36 @@ int messageTCP(int fd, char* send){
 }
 
 int responseTCP(int fd,char* recv){
+    //Esta função não é utilizada por ser uma versão inferior da funcao "newresponse" encontrada a baixo
+    //Manteve-se a funcao aqui pois pode ser util para casos mais gerais, pois recebe a mensagem completa
+    //enquanto o newresponse fica à espera do caracter /n
     int socket_state;
     memset(recv, 0, 150);
     socket_state = read(fd, recv, 150);
     if (socket_state == -1) {exit(1);}
+    //Caso esteja Vazio
     if(socket_state == 0){
         strcpy(recv,"LEAVE\n");
     }
     
-
     return 0;
 }
 
 int newresponseTCP(int fd,char* recv){
+    //Versão avancada do responseTCP, recebe mensagens, mas só le ate encontrar um /n
     char c;
     int bytes_read = 0;
     int aux;
     memset(recv, 0, 150);
     while ( (aux=read(fd, &c, 1)) == 1) {
+        //Quando encontra /n retorna
         if (c == '\n') {
             recv[bytes_read] = '\n';
             return bytes_read;
         } else {
             recv[bytes_read] = c;
             bytes_read++;
+            //Se uma mensagem tem 150 caracteres em aparecer um /n algo está mal!
             if (bytes_read >= 150) {
                 fprintf(stderr, "\x1b[31m[Error]\x1b[0m Mensagem Incorreta!\n");
                 return -1;
@@ -176,6 +184,7 @@ int newresponseTCP(int fd,char* recv){
             perror("\x1b[31m[Error]\x1b[0m Read Error\n");
         }
     }
+    //Se nada é lido, é porque foi dado leave
     if(bytes_read==0){
         strcpy(recv,"LEAVE\n");
     }

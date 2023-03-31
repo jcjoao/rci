@@ -112,9 +112,14 @@ void helpp(){
     return;
 }
 
+//Funcao para confirmar se uma string so tem numeros
 int all_digits(char* str) {
     int i = 0;
+
+    //Percorrer string
     while (str[i] != '\0') {
+
+        //Verificação de se o carater é um digito
         if (str[i] < '0' || str[i] > '9') {
             return 0;
         }
