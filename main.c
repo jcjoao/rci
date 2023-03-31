@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     if(argc==5){ //caso seja dado regIP e regUDP na invocação do programa registar
         strcpy(regIP,argv[3]);
         strcpy(regUDP,argv[4]);
-        if(strlen(argv[3])>15 || strlen(argv[3])<9){
+        if(verify_ip(regIP)==0){
             printf("\x1b[31m[Error]\x1b[0m Número do ip para UDP Inválido!\n");
             exit(0);
         }
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
                     checkinput=1;
                     if(flagjoin==-1){
                     sscanf(user_input,"%s %s %s %s %s %s",com,net,id,bootid,bootIP,bootTCP);
-                    if(strlen(net)!=3 || strlen(id)!=2 || strlen(bootid)!=2 || atoi(bootTCP) < 1024 || atoi(bootTCP) > 65535 ||strlen(bootIP)>15 || strlen(bootIP)<9){
+                    if(strlen(net)!=3 || strlen(id)!=2 || strlen(bootid)!=2 || atoi(bootTCP) < 1024 || atoi(bootTCP) > 65535 ||verify_ip(bootIP)==0){
                         printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
                     }else{
                         flagjoin=1;
@@ -243,14 +243,19 @@ int main(int argc, char *argv[])
                 }
                 if(strcmp(com,"get")==0){
                     checkinput=1;
-                    sscanf(user_input,"%s %s %s",com,dest,name);
-                    if(strlen(dest)!=2 || all_digits(dest)==0){
-                        printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
-                    }else{
-                         printf("\x1b[32m[Info]\x1b[0m Procurando o Conteudo Pedido...\n");
+                    if(flagjoin!=-1){
+                        sscanf(user_input,"%s %s %s",com,dest,name);
                         sscanf(app.self,"%s",idaux);
-                        sprintf(send, "QUERY %s %s %s\n", dest, idaux , name);
-                        forwaring(fd,tab_exp,send,-1);
+                        if(strlen(dest)!=2 || all_digits(dest)==0 || strcmp(dest,idaux)==0){
+                            printf("\x1b[33m[Warning]\x1b[0m Argumentos Incorretos!\n");
+                        }else{
+                            printf("\x1b[32m[Info]\x1b[0m Procurando o Conteudo Pedido...\n");
+                            sscanf(app.self,"%s",idaux);
+                            sprintf(send, "QUERY %s %s %s\n", dest, idaux , name);
+                            forwaring(fd,tab_exp,send,-1);
+                        }
+                    }else{
+                        printf("\x1b[33m[Warning]\x1b[0m Dar join ou djoin antes!\n");
                     }
                 }
                 if(((strcmp(com,"clear")==0) && (strcmp(com2,"routing")==0)) || (strcmp(com,"cr")==0)){

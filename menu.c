@@ -122,3 +122,59 @@ int all_digits(char* str) {
     }
     return 1;
 }
+
+//Função para verificar se um valor de IP está dentro dos moldes pretendidos, retornando 1 em caso afirmativo e 0 caso contrário
+//verificar no formato: nnn.nnn.nnn.nnn ou nnn.nnn.n.n ou nnn.n.n.n, sendo n um digito
+int verify_ip(char* str){
+
+    int i = 0, size = 0;
+
+    size = strlen(str);
+
+    switch(size) {
+    //Verificação do formato nnn.nnn.nnn.nnn   
+    case 15:     
+        for(i=0;i<15;i++){
+            if((i==0 || i==1 || i==2 || i==4 || i==5 || i==6 || i==8 || i==9 || i==10 || i==12 || i==13 || i==14) && (str[i] < '0' || str[i] > '9')){
+                return 0;
+            }
+
+            if((i==3 || i==7 || i==11 ) && (str[i]!='.')){
+                return 0;
+            }
+        }
+        return 1;
+        break;
+    //Verificação do formato nnn.nnn.n.n
+    case 11:     
+        for(i=0;i<15;i++){
+
+            if((i==0 || i==1 || i==2 || i==4 || i==5 || i==6 || i==8 || i==10) && (str[i] < '0' || str[i] > '9')){
+                return 0;
+            }
+
+            if((i==3 || i==7 || i==9 ) && (str[i]!='.')){
+                return 0;
+            }
+        }
+        return 1;
+        break;
+    //Verificação do formato nnn.n.n.n
+    case 9:     
+        for(i=0;i<15;i++){
+
+            if((i==0 || i==1 || i==2 || i==4 || i==6 || i==8) && (str[i] < '0' || str[i] > '9')){
+                return 0;
+            }
+
+            if((i==3 || i==5 || i==7 ) && (str[i]!='.')){
+                return 0;
+            }
+        }
+        return 1;
+        break;
+    default:
+        return 0;
+        break;
+    }
+}

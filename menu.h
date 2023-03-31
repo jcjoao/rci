@@ -22,4 +22,11 @@ void helpp();
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int all_digits(char* str);
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Function name: verify ip
+ * Description: Verifica se é ip
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int verify_ip(char* str);
+
 #endif

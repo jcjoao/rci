@@ -20,7 +20,7 @@ int serverTCP(char* regTCP,struct sockaddr addr,socklen_t addrlen){
     int fd,errcode; 
 
     if((fd=socket(AF_INET,SOCK_STREAM,0))==-1){
-        printf("Error with socket");
+        printf("\x1b[31m[Error]\x1b[0m Error with socket");
         exit(1);}
 
     memset(&hints,0,sizeof hints);
@@ -29,13 +29,13 @@ int serverTCP(char* regTCP,struct sockaddr addr,socklen_t addrlen){
     hints.ai_flags=AI_PASSIVE;
 
     if((errcode=getaddrinfo(NULL,regTCP,&hints,&res))!=0){
-        printf("Error with errcode");
+        printf("\x1b[31m[Error]\x1b[0m Error with errcode");
         /*error*/exit(1);}
     if(bind(fd,res->ai_addr,res->ai_addrlen)==-1){
-        printf("Error with bind");
+        printf("\x1b[31m[Error]\x1b[0m Error with bind");
         /*error*/exit(1);}
     if(listen(fd,5)==-1){
-        printf("Error with listen");
+        printf("\x1b[31m[Error]\x1b[0m Error with listen");
         /*error*/exit(1);}
     freeaddrinfo(res);
 
@@ -66,7 +66,7 @@ int clientUDP(char* regIP,char* regUDP, char* send, char* recv){
 
     errcode=getaddrinfo(regIP,regUDP,&hints,&res);
     if(errcode!=0){
-        printf("UDP Failed!");
+        printf("\x1b[31m[Error]\x1b[0m UDP Failed!");
         exit(1);}
 
 
@@ -112,9 +112,9 @@ int clientTCP(char* bootIP, char* bootTCP){
     hints.ai_family=AF_INET;//IPv4
     hints.ai_socktype=SOCK_STREAM;//TCP socket
     n=getaddrinfo(bootIP,bootTCP,&hints,&res);
-    if(n!=0){printf("Error with getaddrinfo\n");exit(1);}
+    if(n!=0){printf("\x1b[31m[Error]\x1b[0m Error with getaddrinfo\n");exit(1);}
     n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1){printf("Error with Connect\n");exit(1);}
+    if(n==-1){printf("\x1b[31m[Error]\x1b[0m Error with Connect\n");exit(1);}
 
     freeaddrinfo(res);
 
